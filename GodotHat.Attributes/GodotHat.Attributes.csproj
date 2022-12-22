@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net6.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <EnablePreviewFeatures>True</EnablePreviewFeatures>
+        <GenerateRequiresPreviewFeaturesAttribute>True</GenerateRequiresPreviewFeaturesAttribute>
+        <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+        <RootNamespace>GodotHat</RootNamespace>
+        <Authors>Alex de la Mare</Authors>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="GodotSharp" Version="4.0.0-beta.8" />
+      <PackageReference Include="Microsoft.Net.Compilers.Toolset" Version="4.4.0-4.final">
+        <PrivateAssets>all</PrivateAssets>
+        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      </PackageReference>
+      <PackageReference Include="Roslynator.Analyzers" Version="4.2.0">
+        <PrivateAssets>all</PrivateAssets>
+        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      </PackageReference>
+    </ItemGroup>
+
+</Project>
