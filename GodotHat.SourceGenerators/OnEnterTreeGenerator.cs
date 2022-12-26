@@ -10,15 +10,18 @@ public class OnEnterTreeGenerator : NodeNotificationGenerator
     protected override string AttributeFullName => "GodotHat.OnEnterTreeAttribute";
     protected override string AttributeShortName => "OnEnterTree";
     protected override string OverrideEventFunctionName => "_EnterTree";
+    protected override bool AllowDisposableReturns => true;
 
     protected override ClassToProcess? GetNode(GeneratorSyntaxContext context, CancellationToken cancellationToken)
     {
         ClassToProcess? classToProcess = base.GetNode(context, cancellationToken);
-        if (classToProcess is null)
-        {
-            return null;
-        }
+        return classToProcess is null ? null : GetWithSceneUniqueNameInitializers(context, classToProcess);
+    }
 
+    private static ClassToProcess? GetWithSceneUniqueNameInitializers(
+        GeneratorSyntaxContext context,
+        ClassToProcess classToProcess)
+    {
         INamedTypeSymbol? typeSceneUniqueNameAttribute =
             context.SemanticModel.Compilation.GetTypeByMetadataName("GodotHat.SceneUniqueNameAttribute");
 
@@ -27,7 +30,8 @@ public class OnEnterTreeGenerator : NodeNotificationGenerator
             .Cast<IFieldSymbol>()
             .Select(
                 f => (Field: f, Attr: f.GetAttributes()
-                    .FirstOrDefault(a => SymbolEqualityComparer.Default.Equals(a.AttributeClass, typeSceneUniqueNameAttribute))))
+                    .FirstOrDefault(
+                        a => SymbolEqualityComparer.Default.Equals(a.AttributeClass, typeSceneUniqueNameAttribute))))
             .Where(tup => (tup.Attr) is not null)
             .ToList();
 
@@ -36,61 +40,67 @@ public class OnEnterTreeGenerator : NodeNotificationGenerator
             .Cast<IPropertySymbol>()
             .Select(
                 f => (Prop: f, Attr: f.GetAttributes()
-                    .FirstOrDefault(a => SymbolEqualityComparer.Default.Equals(a.AttributeClass, typeSceneUniqueNameAttribute))))
+                    .FirstOrDefault(
+                        a => SymbolEqualityComparer.Default.Equals(a.AttributeClass, typeSceneUniqueNameAttribute))))
             .Where(tup => (tup.Attr) is not null)
             .ToList();
 
-        List<string> methodSources = new List<string>();
-        List<string> methodsToCall = new List<string>();
-
-        foreach (var (fieldSymbol, attr) in fieldsWithAttribute)
+        // Nothing to do
+        if (!fieldsWithAttribute.Any() && !propsWithAttribute.Any())
         {
-            var nullable = fieldSymbol.NullableAnnotation == NullableAnnotation.Annotated;
-            var uniqueName = attr!.ConstructorArguments[0].ToCSharpString();
-            var required = attr.ConstructorArguments.Length == 1 ? null : attr.ConstructorArguments[1].Value as Boolean?;
+            return classToProcess;
+        }
 
-            var isActuallyNullable = nullable || (required is not null && required == false);
-            var getNodeFunc = isActuallyNullable ? "GetNodeOrNull" : "GetNode";
+        var methodSources = new List<string>(classToProcess.MethodSources);
+        var methodsToCall = new List<MethodCall>();
 
-            methodSources.Add(@$"private void __InitFromScene_{fieldSymbol.Name}() {{
+        foreach ((IFieldSymbol? fieldSymbol, AttributeData? attr) in fieldsWithAttribute)
+        {
+            bool nullable = fieldSymbol.NullableAnnotation == NullableAnnotation.Annotated;
+            string uniqueName = attr!.ConstructorArguments[0].ToCSharpString();
+            bool? required = attr.ConstructorArguments.Length == 1
+                ? null
+                : attr.ConstructorArguments[1].Value as Boolean?;
+
+            bool isActuallyNullable = nullable || (required is not null && required == false);
+            string getNodeFunc = isActuallyNullable ? "GetNodeOrNull" : "GetNode";
+
+            methodSources.Add(
+                @$"private void __InitFromScene_{fieldSymbol.Name}()
+    {{
         this.{fieldSymbol.Name} = this.{getNodeFunc}<{fieldSymbol.Type.ToDisplayString(NullableFlowState.None)}>({uniqueName});
     }}");
-            methodsToCall.Add($"__InitFromScene_{fieldSymbol.Name}");
+            methodsToCall.Add(new MethodCall($"__InitFromScene_{fieldSymbol.Name}", false));
         }
 
-        foreach (var (propSymbol, attr) in propsWithAttribute)
+        foreach ((IPropertySymbol? propSymbol, AttributeData? attr) in propsWithAttribute)
         {
-            var nullable = propSymbol.NullableAnnotation == NullableAnnotation.Annotated;
-            var uniqueName = attr!.ConstructorArguments[0].ToCSharpString();
-            var required = attr.ConstructorArguments.Length == 1 ? null : attr.ConstructorArguments[1].Value as Boolean?;
+            bool nullable = propSymbol.NullableAnnotation == NullableAnnotation.Annotated;
+            string uniqueName = attr!.ConstructorArguments[0].ToCSharpString();
+            bool? required = attr.ConstructorArguments.Length == 1
+                ? null
+                : attr.ConstructorArguments[1].Value as bool?;
 
-            var isActuallyNullable = nullable || (required is not null && required == false);
-            var getNodeFunc = isActuallyNullable ? "GetNodeOrNull" : "GetNode";
+            bool isActuallyNullable = nullable || (required is not null && required == false);
+            string getNodeFunc = isActuallyNullable ? "GetNodeOrNull" : "GetNode";
 
-            methodSources.Add(@$"private void __InitFromScene_{propSymbol.Name}() {{
+            methodSources.Add(
+                @$"private void __InitFromScene_{propSymbol.Name}()
+    {{
         this.{propSymbol.Name} = this.{getNodeFunc}<{propSymbol.Type.ToDisplayString(NullableFlowState.None)}>({uniqueName});
     }}");
-            methodsToCall.Add($"__InitFromScene_{propSymbol.Name}");
+            methodsToCall.Add(new MethodCall($"__InitFromScene_{propSymbol.Name}", false));
         }
 
-        classToProcess.SubMethodsToCall.ForEach(methodsToCall.Add);
+        classToProcess.MethodsToCall.ForEach(methodsToCall.Add);
 
         // Also the new methods we generate
-        return new WithExtraMethods(
+        return new ClassToProcess(
             classToProcess.Syntax,
             classToProcess.Symbol,
             methodsToCall,
             methodSources,
+            classToProcess.HasTargetMethodAlready,
             classToProcess.Diagnostics);
-    }
-
-    protected record class WithExtraMethods(
-        ClassDeclarationSyntax Syntax,
-        INamedTypeSymbol Symbol,
-        List<string> SubMethodsToCall,
-        IEnumerable<string> MethodSources,
-        List<Diagnostic> Diagnostics) : ClassToProcess(Syntax, Symbol, SubMethodsToCall, Diagnostics)
-    {
-        public override IEnumerable<string> MethodSources { get; } = MethodSources;
     }
 }

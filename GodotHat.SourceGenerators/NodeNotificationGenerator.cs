@@ -12,6 +12,7 @@ public abstract class NodeNotificationGenerator : IIncrementalGenerator
     protected abstract string AttributeFullName { get; }
     protected abstract string AttributeShortName { get; }
     protected abstract string OverrideEventFunctionName { get; }
+    protected abstract bool AllowDisposableReturns { get; }
 
     public virtual void Initialize(IncrementalGeneratorInitializationContext context)
     {
@@ -34,6 +35,9 @@ public abstract class NodeNotificationGenerator : IIncrementalGenerator
         INamedTypeSymbol? typeAttribute =
             context.SemanticModel.Compilation.GetTypeByMetadataName(this.AttributeFullName);
 
+        INamedTypeSymbol? typeIDisposable =
+            context.SemanticModel.Compilation.GetTypeByMetadataName("System.IDisposable");
+
         if (typeNodeClass == null)
         {
             throw new InvalidOperationException("Failed to resolve Godot.Node, is it in a referenced assembly?");
@@ -45,16 +49,23 @@ public abstract class NodeNotificationGenerator : IIncrementalGenerator
                 $"Failed to resolve {this.AttributeFullName}, is it in a referenced assembly?");
         }
 
+        if (typeIDisposable is null)
+        {
+            throw new InvalidOperationException("System.IDisposable not found");
+        }
+
         var classSyntaxNode = (ClassDeclarationSyntax)context.Node;
         bool isPartial = classSyntaxNode.Modifiers.Any(m => m.IsKind(SyntaxKind.PartialKeyword));
 
         List<Diagnostic> diagnostics = new List<Diagnostic>();
 
         INamedTypeSymbol? classSymbol = context.SemanticModel.GetDeclaredSymbol(classSyntaxNode, cancellationToken);
-        if (classSymbol is null || !DoesExtendNode(classSymbol.BaseType, typeNodeClass))
+        if (classSymbol is null || !DoesExtendClass(classSymbol.BaseType, typeNodeClass))
         {
             return null;
         }
+
+        // TODO: emit diagnostic if attributes are on anything that is filtered out, ie wrong return type, wrong args etc
 
         bool hasGodotImpl = !classSymbol.GetMembers(this.OverrideEventFunctionName).IsEmpty;
         var methodsWithAttribute = classSymbol.GetMembers()
@@ -62,11 +73,22 @@ public abstract class NodeNotificationGenerator : IIncrementalGenerator
             .Cast<IMethodSymbol>()
             .Where(
                 m => m.Arity == 0 &&
-                     m.ReturnsVoid &&
+                     (m.ReturnsVoid || DoesImplementInterface(m.ReturnType, typeIDisposable)) &&
                      m.GetAttributes()
                          .Any(a => SymbolEqualityComparer.Default.Equals(a.AttributeClass, typeAttribute)))
-            .Select(m => m.Name)
+            .Select(m => new MethodCall(m.Name, this.AllowDisposableReturns && DoesImplementInterface(m.ReturnType, typeIDisposable)))
             .ToList();
+
+        var methodSources = new List<string>();
+        foreach (var call in methodsWithAttribute.Where(m => m.IsDisposableReturn))
+        {
+            methodSources.Add($"private IDisposable? __disposable_{call.Name};");
+            methodSources.Add(@$"private void __Dispose_{call.Name}()
+    {{
+        __disposable_{call.Name}?.Dispose();
+        __disposable_{call.Name} = null;
+    }}");
+        }
 
         if (!isPartial && methodsWithAttribute.Count > 0)
         {
@@ -85,29 +107,14 @@ public abstract class NodeNotificationGenerator : IIncrementalGenerator
                     classSymbol.ContainingNamespace.ToString()));
         }
 
-        if (hasGodotImpl)
-        {
-            diagnostics.Add(
-                Diagnostic.Create(
-                    new DiagnosticDescriptor(
-                        "GH0002",
-                        "Node class with GodotHat attributes already implements Godot override",
-                        $" {{0}} class declaration should not have a {this.OverrideEventFunctionName} " +
-                        $"function defined, so it can be generated instead. Use [{this.AttributeShortName}] attribute " +
-                        $"on an method instead, or remove the other [{this.AttributeShortName}] members.",
-                        "GodotHat.generation",
-                        DiagnosticSeverity.Warning,
-                        true),
-                    classSymbol.Locations.FirstOrDefault(),
-                    classSymbol.Name,
-                    classSymbol.ContainingNamespace.ToString()));
-        }
-
-        return methodsWithAttribute.Count == 0
-            ? null
-            : new ClassToProcess(classSyntaxNode, classSymbol, methodsWithAttribute, diagnostics);
+        return new ClassToProcess(
+            classSyntaxNode,
+            classSymbol,
+            methodsWithAttribute,
+            methodSources,
+            hasGodotImpl,
+            diagnostics);
     }
-
 
     private void GenerateNodeAdditions(
         SourceProductionContext context,
@@ -127,14 +134,37 @@ public abstract class NodeNotificationGenerator : IIncrementalGenerator
 
             classToProcess.Diagnostics.ForEach(context.ReportDiagnostic);
 
-            // Only generate if partial. If not, there will be a diagnostic
-            if (classToProcess.Syntax.Modifiers.Any(m => m.IsKind(SyntaxKind.PartialKeyword)))
+            if (IsAnythingToGenerate(classToProcess))
             {
+                if (classToProcess.HasTargetMethodAlready)
+                {
+                    context.ReportDiagnostic(
+                        Diagnostic.Create(
+                            new DiagnosticDescriptor(
+                                "GH0002",
+                                "Node class with GodotHat attributes already implements Godot override",
+                                $" {{0}} class declaration should not have a {this.OverrideEventFunctionName} " +
+                                $"function defined, so it can be generated instead. Use [{this.AttributeShortName}] attribute " +
+                                $"on an method instead, or remove the other [{this.AttributeShortName}] members.",
+                                "GodotHat.generation",
+                                DiagnosticSeverity.Warning,
+                                true),
+                            classToProcess.Symbol.Locations.FirstOrDefault(),
+                            classToProcess.Symbol.Name,
+                            classToProcess.Symbol.ContainingNamespace.ToString()));
+                }
+
                 GenerateNodeAdditions(
                     context,
                     classToProcess);
             }
         }
+    }
+
+    private static bool IsAnythingToGenerate(ClassToProcess classToProcess)
+    {
+        bool isPartial = classToProcess.Syntax.Modifiers.Any(m => m.IsKind(SyntaxKind.PartialKeyword));
+        return isPartial && (classToProcess.MethodSources.Any() || classToProcess.MethodsToCall.Any());
     }
 
     private void GenerateNodeAdditions(
@@ -145,12 +175,12 @@ public abstract class NodeNotificationGenerator : IIncrementalGenerator
         ClassDeclarationSyntax classSyntaxNode = classToProcess.Syntax;
 
         string calls = string.Concat(
-            classToProcess.SubMethodsToCall
-                .Select(source => $"        {source}();{Environment.NewLine}"));
+            classToProcess.MethodsToCall
+                .Select(source => $"\n        {source};"));
 
         string methodSources = string.Concat(
             classToProcess.MethodSources
-                .SelectMany(source => $"    {source}{Environment.NewLine}{Environment.NewLine}"));
+                .SelectMany(source => $"\n\n    {source}"));
 
         string code = @$"// Generated code via {this.GetType().FullName}
 namespace {classSymbol.ContainingNamespace};
@@ -160,14 +190,16 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using Godot;
 
-{classSyntaxNode.Modifiers} class {classSymbol.Name} {{
+#nullable enable
 
-    public override void {this.OverrideEventFunctionName}() {{
+{classSyntaxNode.Modifiers} class {classSymbol.Name}
+{{
+
+    public override void {this.OverrideEventFunctionName}()
+    {{
         // Generated code, to add other calls add [{this.AttributeShortName}] attributes to methods
 {calls}
-    }}
-
-{methodSources}
+    }}{methodSources}
 }}
 ";
 
@@ -176,14 +208,14 @@ using Godot;
             code);
     }
 
-    private static IEnumerable<INamedTypeSymbol> GetThisAndBaseTypes(INamedTypeSymbol? symbol)
+    private static IEnumerable<ITypeSymbol> GetThisAndBaseTypes(ITypeSymbol? symbol)
     {
         if (symbol is null)
         {
             yield break;
         }
 
-        INamedTypeSymbol? current = symbol;
+        ITypeSymbol? current = symbol;
         do
         {
             yield return current;
@@ -191,25 +223,56 @@ using Godot;
         } while (current is not null);
     }
 
-    private static bool DoesExtendNode(INamedTypeSymbol? symbol, ISymbol typeNodeClass)
+    protected static bool DoesExtendClass(ITypeSymbol? symbol, ISymbol typeNodeClass)
     {
         return GetThisAndBaseTypes(symbol).Any(t => SymbolEqualityComparer.Default.Equals(t, typeNodeClass));
     }
 
-    protected record class ClassToProcess(
+    protected static bool DoesImplementInterface(ITypeSymbol? symbol, ISymbol typeNodeInterface)
+    {
+        if (symbol is null)
+        {
+            return false;
+        }
+        return SymbolEqualityComparer.Default.Equals(symbol, typeNodeInterface) ||
+               symbol.AllInterfaces.Any(i => SymbolEqualityComparer.Default.Equals(i, typeNodeInterface));
+    }
+
+    protected record class MethodCall(
+        string Name,
+        bool IsDisposableReturn)
+    {
+        public string Name { get; } = Name;
+        public bool IsDisposableReturn { get; } = IsDisposableReturn;
+
+        public override string ToString()
+        {
+            if (this.IsDisposableReturn)
+            {
+                return $"__disposable_{Name} = {Name}()";
+            }
+            return $"{Name}()";
+        }
+    }
+
+    protected record ClassToProcess(
         ClassDeclarationSyntax Syntax,
         INamedTypeSymbol Symbol,
-        List<string> SubMethodsToCall,
+        List<MethodCall> MethodsToCall,
+        List<string> MethodSources,
+        bool HasTargetMethodAlready,
         List<Diagnostic> Diagnostics)
     {
         public ClassDeclarationSyntax Syntax { get; } = Syntax;
 
         public INamedTypeSymbol Symbol { get; } = Symbol;
 
-        public List<string> SubMethodsToCall { get; } = SubMethodsToCall;
+        public List<MethodCall> MethodsToCall { get; } = MethodsToCall;
 
         public List<Diagnostic> Diagnostics { get; } = Diagnostics;
 
-        public virtual IEnumerable<string> MethodSources => ImmutableList<string>.Empty;
+        public List<string> MethodSources { get; } = MethodSources;
+
+        public bool HasTargetMethodAlready { get; } = HasTargetMethodAlready;
     }
 }
