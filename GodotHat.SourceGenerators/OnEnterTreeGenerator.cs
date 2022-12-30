@@ -5,7 +5,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace GodotHat.SourceGenerators;
 
 [Generator(LanguageNames.CSharp)]
-public class OnEnterTreeGenerator : NodeNotificationGenerator
+public class OnEnterTreeGenerator : AbstractNodeNotificationGenerator
 {
     protected override string AttributeFullName => "GodotHat.OnEnterTreeAttribute";
     protected override string AttributeShortName => "OnEnterTree";
@@ -15,15 +15,14 @@ public class OnEnterTreeGenerator : NodeNotificationGenerator
     protected override ClassToProcess? GetNode(GeneratorSyntaxContext context, CancellationToken cancellationToken)
     {
         ClassToProcess? classToProcess = base.GetNode(context, cancellationToken);
-        return classToProcess is null ? null : GetWithSceneUniqueNameInitializers(context, classToProcess);
+        return classToProcess is not null ? GetWithSceneUniqueNameInitializers(context, classToProcess) : null;
     }
 
-    private static ClassToProcess? GetWithSceneUniqueNameInitializers(
+    private static ClassToProcess GetWithSceneUniqueNameInitializers(
         GeneratorSyntaxContext context,
         ClassToProcess classToProcess)
     {
-        INamedTypeSymbol? typeSceneUniqueNameAttribute =
-            context.SemanticModel.Compilation.GetTypeByMetadataName("GodotHat.SceneUniqueNameAttribute");
+        INamedTypeSymbol typeSceneUniqueNameAttribute = GetRequiredType(context.SemanticModel, "GodotHat.SceneUniqueNameAttribute");
 
         var fieldsWithAttribute = classToProcess.Symbol.GetMembers()
             .Where(m => m.Kind == SymbolKind.Field)
@@ -70,7 +69,7 @@ public class OnEnterTreeGenerator : NodeNotificationGenerator
     {{
         this.{fieldSymbol.Name} = this.{getNodeFunc}<{fieldSymbol.Type.ToDisplayString(NullableFlowState.None)}>({uniqueName});
     }}");
-            methodsToCall.Add(new MethodCall($"__InitFromScene_{fieldSymbol.Name}", false));
+            methodsToCall.Add(new MethodCall($"__InitFromScene_{fieldSymbol.Name}", MethodCallType.PrimaryEvent));
         }
 
         foreach ((IPropertySymbol? propSymbol, AttributeData? attr) in propsWithAttribute)
@@ -89,7 +88,7 @@ public class OnEnterTreeGenerator : NodeNotificationGenerator
     {{
         this.{propSymbol.Name} = this.{getNodeFunc}<{propSymbol.Type.ToDisplayString(NullableFlowState.None)}>({uniqueName});
     }}");
-            methodsToCall.Add(new MethodCall($"__InitFromScene_{propSymbol.Name}", false));
+            methodsToCall.Add(new MethodCall($"__InitFromScene_{propSymbol.Name}", MethodCallType.PrimaryEvent));
         }
 
         classToProcess.MethodsToCall.ForEach(methodsToCall.Add);

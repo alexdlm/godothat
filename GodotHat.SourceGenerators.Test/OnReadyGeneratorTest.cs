@@ -32,6 +32,7 @@ public partial class MyNode : Node
 
 
     [OnReady]
+    [AutoDispose]
     private IDisposable? DoThing3()
     {{
         return new List<string>().Select(x => x).GetEnumerator(); 
@@ -79,23 +80,7 @@ public partial class MyNode
 
         __disposable_DoThing = DoThing();
         DoThing2();
-        __disposable_DoThing3 = DoThing3();
-    }
-
-    private IDisposable? __disposable_DoThing;
-
-    private void __Dispose_DoThing()
-    {
-        __disposable_DoThing?.Dispose();
-        __disposable_DoThing = null;
-    }
-
-    private IDisposable? __disposable_DoThing3;
-
-    private void __Dispose_DoThing3()
-    {
-        __disposable_DoThing3?.Dispose();
-        __disposable_DoThing3 = null;
+        UpdateDoThing3();
     }
 }
 ");

@@ -7,7 +7,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace GodotHat.SourceGenerators;
 
 [Generator(LanguageNames.CSharp)]
-public partial class OnExitTreeGenerator : NodeNotificationGenerator
+public partial class OnExitTreeGenerator : AbstractNodeNotificationGenerator
 {
     protected override string AttributeFullName => "GodotHat.OnExitTreeAttribute";
     protected override string AttributeShortName => "OnExitTree";
@@ -18,47 +18,37 @@ public partial class OnExitTreeGenerator : NodeNotificationGenerator
     protected override ClassToProcess? GetNode(GeneratorSyntaxContext context, CancellationToken cancellationToken)
     {
         ClassToProcess? classToProcess = base.GetNode(context, cancellationToken);
-        return classToProcess is null ? null : GetWithSceneUniqueNameInitializers(context, classToProcess);
+        return classToProcess is not null ? this.GetWithExitTreeMethods(context, classToProcess) : null;
     }
 
-    private static ClassToProcess? GetWithSceneUniqueNameInitializers(
+    private ClassToProcess? GetWithExitTreeMethods(
         GeneratorSyntaxContext context,
         ClassToProcess classToProcess)
     {
-        INamedTypeSymbol? typeOnEnterTreeAttribute =
-            context.SemanticModel.Compilation.GetTypeByMetadataName("GodotHat.OnEnterTreeAttribute");
-        INamedTypeSymbol? typeOnReadyAttribute =
-            context.SemanticModel.Compilation.GetTypeByMetadataName("GodotHat.OnReadyAttribute");
-        INamedTypeSymbol? typeIDisposable =
-            context.SemanticModel.Compilation.GetTypeByMetadataName("System.IDisposable");
+        INamedTypeSymbol typeOnEnterTreeAttribute =
+            GetRequiredType(context.SemanticModel, "GodotHat.OnEnterTreeAttribute");
+        INamedTypeSymbol typeOnReadyAttribute = GetRequiredType(context.SemanticModel, "GodotHat.OnReadyAttribute");
+        INamedTypeSymbol typeIDisposable = GetRequiredType(context.SemanticModel, "System.IDisposable");
+        INamedTypeSymbol typeAutoDisposeAttribute =
+            GetRequiredType(context.SemanticModel, "GodotHat.AutoDisposeAttribute");
 
-        if (typeOnEnterTreeAttribute is null || typeOnReadyAttribute is null)
-        {
-            throw new InvalidOperationException(
-                "Failed to resolve GodotHat attributes, is the GodotHat.Attributes assembly referenced?");
-        }
-
-        if (typeIDisposable is null)
-        {
-            throw new InvalidOperationException("System.IDisposable not found");
-        }
-
-        var disposableMethodsWithAttributes = classToProcess.Symbol.GetMembers()
+        List<MethodCall> disposeCalls = classToProcess.Symbol.GetMembers()
             .Where(m => m.Kind == SymbolKind.Method)
             .Cast<IMethodSymbol>()
-            .Where(
-                m => m.Arity == 0 &&
-                     DoesImplementInterface(m.ReturnType, typeIDisposable) &&
-                     m.GetAttributes()
-                         .Any(
-                             a => SymbolEqualityComparer.Default.Equals(a.AttributeClass, typeOnEnterTreeAttribute) ||
-                                  SymbolEqualityComparer.Default.Equals(a.AttributeClass, typeOnReadyAttribute)))
-            .Select(m => m.Name)
-            .Reverse() // Reverse order of initialization
-            .ToList();
+            .Select(
+                m => GetMethodCall(
+                    classToProcess.Symbol,
+                    m,
+                    true,
+                    typeIDisposable,
+                    typeAutoDisposeAttribute,
+                    typeOnEnterTreeAttribute,
+                    typeOnReadyAttribute))
+            .Where(m => m?.ShouldCallDisposable == true)
+            .ToList()!;
 
         // Nothing to do
-        if (!disposableMethodsWithAttributes.Any())
+        if (!disposeCalls.Any())
         {
             return classToProcess;
         }
@@ -69,9 +59,33 @@ public partial class OnExitTreeGenerator : NodeNotificationGenerator
         methodSources.Add(
             @$"private void __DisposeOnExitTree()
     {{
-{string.Join("\n", disposableMethodsWithAttributes.Select(m => $"        __Dispose_{m}();"))}
+{string.Join("\n", disposeCalls.Select(call => $"        {call.DisposeCallString};").Reverse())}
     }}");
-        methodsToCall.Add(new MethodCall("__DisposeOnExitTree", false));
+        methodsToCall.Add(new MethodCall("__DisposeOnExitTree", MethodCallType.PrimaryEvent));
+
+        // Generate members for any AutoDispose methods without an other event attribute (eg no OnReady)
+        IEnumerable<MethodCall> disposables = disposeCalls.Where(call => call.ShouldCallDisposable);
+
+        // TODO: all disposables should be managed here
+        foreach (MethodCall call in disposables)
+        {
+            methodSources.Add($"private IDisposable? {call.DisposableMemberName};");
+            if (call.IsAutoDisposable)
+            {
+                methodSources.Add(
+                    $@"public void Update{call.Name}({string.Join(", ", call.Symbol!.Parameters.Select(p => p.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)))})
+    {{
+        {call.DisposableMethodName}();
+        {call.DisposableMemberName} = {call.Name}({string.Join(", ", call.Symbol!.Parameters.Select(p => p.Name))});
+    }}");
+            }
+            methodSources.Add(
+                @$"private void {call.DisposableMethodName}()
+    {{
+        {call.DisposableMemberName}?.Dispose();
+        {call.DisposableMemberName} = null;
+    }}");
+        }
 
         // Also the new methods we generate
         return new ClassToProcess(

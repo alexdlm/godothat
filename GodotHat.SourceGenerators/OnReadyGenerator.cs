@@ -3,7 +3,7 @@
 namespace GodotHat.SourceGenerators;
 
 [Generator(LanguageNames.CSharp)]
-public class OnReadyGenerator : NodeNotificationGenerator
+public class OnReadyGenerator : AbstractNodeNotificationGenerator
 {
     protected override string AttributeFullName => "GodotHat.OnReadyAttribute";
     protected override string AttributeShortName => "OnReady";
