@@ -72,8 +72,32 @@ public partial class OnExitTreeGenerator : AbstractNodeNotificationGenerator
             methodSources.Add($"private IDisposable? {call.DisposableMemberName};");
             if (call.IsAutoDisposable)
             {
+                var autoDisposeAttr = call.Symbol?.GetAttributes()
+                    .First(a => SymbolEqualityComparer.Default.Equals(a.AttributeClass, typeAutoDisposeAttribute));
+
+                // Check namedArguments first, because constructor has a default value that can be returned in the ConstructorArguments
+                TypedConstant? accessibilityValue = autoDisposeAttr?.NamedArguments
+                    .Where(na => na.Key == "Accessibility")
+                    .Select(na => na.Value)
+                    .FirstOrDefault();
+
+                if (!accessibilityValue.HasValue || accessibilityValue.Value.IsNull)
+                {
+                    accessibilityValue = autoDisposeAttr?.ConstructorArguments.FirstOrDefault();
+                }
+
+                var enumVal = accessibilityValue?.ToCSharpString();
+
+                string accessibility = enumVal switch
+                {
+                    "GodotHat.Accessibility.Internal" => "internal",
+                    "GodotHat.Accessibility.Private" => "private",
+                    "GodotHat.Accessibility.Protected" => "protected",
+                    _ => "public",
+                };
+
                 methodSources.Add(
-                    $@"public void Update{call.Name}({string.Join(", ", call.Symbol!.Parameters.Select(p => p.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)))})
+                    $@"{accessibility} void Update{call.Name}({string.Join(", ", call.Symbol!.Parameters.Select(p => p.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)))})
     {{
         {call.DisposableMethodName}();
         {call.DisposableMemberName} = {call.Name}({string.Join(", ", call.Symbol!.Parameters.Select(p => p.Name))});

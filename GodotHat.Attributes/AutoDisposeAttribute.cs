@@ -7,4 +7,10 @@
 [AttributeUsage(AttributeTargets.Method)]
 public class AutoDisposeAttribute : Attribute
 {
+    public AutoDisposeAttribute(Accessibility accessibility = Accessibility.Public)
+    {
+        this.Accessibility = accessibility;
+    }
+
+    public Accessibility Accessibility { get; init; }
 }

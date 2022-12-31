@@ -39,7 +39,14 @@ public partial class MyNode : Node
         return new List<string>().Select(x => x).GetEnumerator(); 
     }}
 
-    [AutoDispose]
+    [OnReady]
+    [AutoDispose(Accessibility = Accessibility.Internal)]
+    private IDisposable? DoThing3()
+    {{
+        return new List<string>().Select(x => x).GetEnumerator(); 
+    }}
+
+    [AutoDispose(Accessibility.Protected)]
     private IDisposable? MyCall(bool foo, string? message)
     {{
         return null;
@@ -120,6 +127,7 @@ public partial class MyNode
     private void __DisposeOnExitTree()
     {
         DisposeMyCall();
+        DisposeDoThing3();
         DisposeDoThing2();
         __Dispose_DoThing();
     }
@@ -146,9 +154,23 @@ public partial class MyNode
         __disposable_DoThing2 = null;
     }
 
+    private IDisposable? __disposable_DoThing3;
+
+    internal void UpdateDoThing3()
+    {
+        DisposeDoThing3();
+        __disposable_DoThing3 = DoThing3();
+    }
+
+    private void DisposeDoThing3()
+    {
+        __disposable_DoThing3?.Dispose();
+        __disposable_DoThing3 = null;
+    }
+
     private IDisposable? __disposable_MyCall;
 
-    public void UpdateMyCall(bool foo, string? message)
+    protected void UpdateMyCall(bool foo, string? message)
     {
         DisposeMyCall();
         __disposable_MyCall = MyCall(foo, message);
