@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net6.0</TargetFramework>
+        <TargetFramework>net7.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <EnablePreviewFeatures>True</EnablePreviewFeatures>
@@ -9,11 +9,12 @@
         <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
         <RootNamespace>GodotHat</RootNamespace>
         <Authors>Alex de la Mare</Authors>
+        <LangVersion>11</LangVersion>
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="GodotSharp" Version="4.0.0-beta.10" />
-      <PackageReference Include="Microsoft.Net.Compilers.Toolset" Version="4.4.0">
+      <PackageReference Include="GodotSharp" Version="4.0.1" />
+      <PackageReference Include="Microsoft.Net.Compilers.Toolset" Version="4.6.0-1.final">
         <PrivateAssets>all</PrivateAssets>
         <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       </PackageReference>
