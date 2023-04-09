@@ -22,7 +22,7 @@ public class OnEnterTreeGenerator : AbstractNodeNotificationGenerator
         GeneratorSyntaxContext context,
         ClassToProcess classToProcess)
     {
-        INamedTypeSymbol typeSceneUniqueNameAttribute = GetRequiredType(context.SemanticModel, "GodotHat.SceneUniqueNameAttribute");
+        INamedTypeSymbol typeSceneUniqueNameAttribute = GeneratorUtil.GetRequiredType(context.SemanticModel, "GodotHat.SceneUniqueNameAttribute");
 
         var fieldsWithAttribute = classToProcess.Symbol.GetMembers()
             .Where(m => m.Kind == SymbolKind.Field)

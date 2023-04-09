@@ -25,12 +25,10 @@ public partial class OnExitTreeGenerator : AbstractNodeNotificationGenerator
         GeneratorSyntaxContext context,
         ClassToProcess classToProcess)
     {
-        INamedTypeSymbol typeOnEnterTreeAttribute =
-            GetRequiredType(context.SemanticModel, "GodotHat.OnEnterTreeAttribute");
-        INamedTypeSymbol typeOnReadyAttribute = GetRequiredType(context.SemanticModel, "GodotHat.OnReadyAttribute");
-        INamedTypeSymbol typeIDisposable = GetRequiredType(context.SemanticModel, "System.IDisposable");
-        INamedTypeSymbol typeAutoDisposeAttribute =
-            GetRequiredType(context.SemanticModel, "GodotHat.AutoDisposeAttribute");
+        INamedTypeSymbol typeOnEnterTreeAttribute = GeneratorUtil.GetRequiredType(context.SemanticModel, "GodotHat.OnEnterTreeAttribute");
+        INamedTypeSymbol typeOnReadyAttribute = GeneratorUtil.GetRequiredType(context.SemanticModel, "GodotHat.OnReadyAttribute");
+        INamedTypeSymbol typeIDisposable = GeneratorUtil.GetRequiredType(context.SemanticModel, "System.IDisposable");
+        INamedTypeSymbol typeAutoDisposeAttribute = GeneratorUtil.GetRequiredType(context.SemanticModel, "GodotHat.AutoDisposeAttribute");
 
         List<MethodCall> disposeCalls = classToProcess.Symbol.GetMembers()
             .Where(m => m.Kind == SymbolKind.Method)

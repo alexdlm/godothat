@@ -31,11 +31,12 @@ public abstract class AbstractNodeNotificationGenerator : IIncrementalGenerator
         GeneratorSyntaxContext context,
         CancellationToken cancellationToken)
     {
-        INamedTypeSymbol typeNodeClass = GetRequiredType(context.SemanticModel, "Godot.Node");
-        INamedTypeSymbol typeAttribute = GetRequiredType(context.SemanticModel, this.AttributeFullName);
-        INamedTypeSymbol typeIDisposable = GetRequiredType(context.SemanticModel, "System.IDisposable");
-        INamedTypeSymbol typeAutoDisposeAttribute =
-            GetRequiredType(context.SemanticModel, "GodotHat.AutoDisposeAttribute");
+        INamedTypeSymbol typeNodeClass = GeneratorUtil.GetRequiredType(context.SemanticModel, "Godot.Node");
+        INamedTypeSymbol typeAttribute = GeneratorUtil.GetRequiredType(context.SemanticModel, this.AttributeFullName);
+        INamedTypeSymbol typeIDisposable = GeneratorUtil.GetRequiredType(context.SemanticModel, "System.IDisposable");
+        INamedTypeSymbol typeAutoDisposeAttribute = GeneratorUtil.GetRequiredType(
+            context.SemanticModel,
+            "GodotHat.AutoDisposeAttribute");
 
         var classSyntaxNode = (ClassDeclarationSyntax)context.Node;
         bool isPartial = classSyntaxNode.Modifiers.Any(m => m.IsKind(SyntaxKind.PartialKeyword));
@@ -43,7 +44,7 @@ public abstract class AbstractNodeNotificationGenerator : IIncrementalGenerator
         var diagnostics = new List<Diagnostic>();
 
         INamedTypeSymbol? classSymbol = context.SemanticModel.GetDeclaredSymbol(classSyntaxNode, cancellationToken);
-        if (classSymbol is null || !DoesExtendClass(classSymbol.BaseType, typeNodeClass))
+        if (classSymbol is null || !GeneratorUtil.DoesExtendClass(classSymbol.BaseType, typeNodeClass))
         {
             return null;
         }
@@ -68,18 +69,7 @@ public abstract class AbstractNodeNotificationGenerator : IIncrementalGenerator
         if (!isPartial && primaryMethodCalls.Count > 0)
         {
             // Probably redundant with Godot's own diagnostics but /shrug
-            diagnostics.Add(
-                Diagnostic.Create(
-                    new DiagnosticDescriptor(
-                        "GH0001",
-                        "Node class with GodotHat attributes is not partial",
-                        " {0} class declaration should have partial modifier so source can be generated.",
-                        "GodotHat.generation",
-                        DiagnosticSeverity.Warning,
-                        true),
-                    classSymbol.Locations.FirstOrDefault(),
-                    classSymbol.Name,
-                    classSymbol.ContainingNamespace.ToString()));
+            diagnostics.Add(Diagnostics.CreateNodeNotPartial(classSymbol));
         }
 
         return new ClassToProcess(
@@ -100,7 +90,7 @@ public abstract class AbstractNodeNotificationGenerator : IIncrementalGenerator
         params INamedTypeSymbol[] typePrimaryAttributes)
     {
         bool returnsVoid = method.ReturnsVoid;
-        bool returnsDisposable = DoesImplementInterface(method.ReturnType, typeIDisposable);
+        bool returnsDisposable = GeneratorUtil.DoesImplementInterface(method.ReturnType, typeIDisposable);
         INamedTypeSymbol? primaryAttribute = Array.Find(
             typePrimaryAttributes,
             attr => method.GetAttributes().Any(a => SymbolEqualityComparer.Default.Equals(a.AttributeClass, attr)));
@@ -114,16 +104,7 @@ public abstract class AbstractNodeNotificationGenerator : IIncrementalGenerator
         {
             if (method.Arity != 0)
             {
-                diagnostics.Add(
-                    Diagnostic.Create(
-                        new DiagnosticDescriptor(
-                            "GH0003",
-                            $"Method with attribute [{primaryAttribute.Name}] must not take any parameters.",
-                            $" {classSymbol.Name}.{method.Name} method declaration should have an empty parameter list.",
-                            "GodotHat.generation",
-                            DiagnosticSeverity.Warning,
-                            true),
-                        classSymbol.Locations.FirstOrDefault()));
+                diagnostics.Add(Diagnostics.CreateMethodShouldHaveNoParams(classSymbol, primaryAttribute, method));
             }
             else
             {
@@ -137,16 +118,7 @@ public abstract class AbstractNodeNotificationGenerator : IIncrementalGenerator
 
             if (!returnsVoid && !(allowDisposableReturns && returnsDisposable))
             {
-                diagnostics.Add(
-                    Diagnostic.Create(
-                        new DiagnosticDescriptor(
-                            "GH0004",
-                            $"Method with attribute [{primaryAttribute.Name}] should return void.",
-                            $" {classSymbol.Name}.{method.Name} should return void.",
-                            "GodotHat.generation",
-                            DiagnosticSeverity.Warning,
-                            true),
-                        classSymbol.Locations.FirstOrDefault()));
+                diagnostics.Add(Diagnostics.CreateMethodShouldReturnVoid(classSymbol, primaryAttribute, method));
             }
         }
 
@@ -154,16 +126,7 @@ public abstract class AbstractNodeNotificationGenerator : IIncrementalGenerator
         {
             if (method.DeclaredAccessibility != Accessibility.Private)
             {
-                diagnostics.Add(
-                    Diagnostic.Create(
-                        new DiagnosticDescriptor(
-                            "GH0005",
-                            "Method with attribute [AutoDispose] should be private",
-                            $" {classSymbol.Name}.{method.Name} should be private. The generated Update{method.Name} method will be public",
-                            "GodotHat.generation",
-                            DiagnosticSeverity.Warning,
-                            true),
-                        classSymbol.Locations.FirstOrDefault()));
+                diagnostics.Add(Diagnostics.CreateMethodShouldBePrivate(classSymbol, typeAutoDisposeAttribute, method));
             }
 
             if (returnsDisposable)
@@ -173,15 +136,7 @@ public abstract class AbstractNodeNotificationGenerator : IIncrementalGenerator
             else
             {
                 diagnostics.Add(
-                    Diagnostic.Create(
-                        new DiagnosticDescriptor(
-                            "GH0006",
-                            "Method with attribute [AutoDispose] should return IDisposable",
-                            $" {classSymbol.Name}.{method.Name} should return IDisposable (or IDisposable?).",
-                            "GodotHat.generation",
-                            DiagnosticSeverity.Warning,
-                            true),
-                        classSymbol.Locations.FirstOrDefault()));
+                    Diagnostics.CreateMethodShouldReturnIDisposable(classSymbol, typeAutoDisposeAttribute, method));
             }
         }
 
@@ -211,19 +166,10 @@ public abstract class AbstractNodeNotificationGenerator : IIncrementalGenerator
                 if (classToProcess.HasTargetMethodAlready)
                 {
                     context.ReportDiagnostic(
-                        Diagnostic.Create(
-                            new DiagnosticDescriptor(
-                                "GH0002",
-                                "Node class with GodotHat attributes already implements Godot override",
-                                $" {{0}} class declaration should not have a {this.OverrideEventFunctionName} " +
-                                $"function defined, so it can be generated instead. Use [{this.AttributeShortName}] attribute " +
-                                $"on an method instead, or remove the other [{this.AttributeShortName}] members.",
-                                "GodotHat.generation",
-                                DiagnosticSeverity.Warning,
-                                true),
-                            classToProcess.Symbol.Locations.FirstOrDefault(),
-                            classToProcess.Symbol.Name,
-                            classToProcess.Symbol.ContainingNamespace.ToString()));
+                        Diagnostics.CreateNodeAlreadyContainsMethod(
+                            classToProcess.Symbol,
+                            this.OverrideEventFunctionName,
+                            this.AttributeShortName));
                 }
 
                 this.GenerateNodeAdditions(
@@ -280,46 +226,6 @@ using Godot;
         context.AddSource(
             $"{classSymbol.ContainingNamespace}.{classSymbol.Name}_{this.AttributeShortName}.generated.cs",
             code);
-    }
-
-    private static IEnumerable<ITypeSymbol> GetThisAndBaseTypes(ITypeSymbol? symbol)
-    {
-        if (symbol is null)
-        {
-            yield break;
-        }
-
-        ITypeSymbol? current = symbol;
-        do
-        {
-            yield return current;
-            current = current.BaseType;
-        } while (current is not null);
-    }
-
-    protected static bool DoesExtendClass(ITypeSymbol? symbol, ISymbol typeNodeClass)
-    {
-        return GetThisAndBaseTypes(symbol).Any(t => SymbolEqualityComparer.Default.Equals(t, typeNodeClass));
-    }
-
-    protected static bool DoesImplementInterface(ITypeSymbol? symbol, ISymbol typeNodeInterface)
-    {
-        if (symbol is null)
-        {
-            return false;
-        }
-        return SymbolEqualityComparer.Default.Equals(symbol, typeNodeInterface) ||
-               symbol.AllInterfaces.Any(i => SymbolEqualityComparer.Default.Equals(i, typeNodeInterface));
-    }
-
-    protected static INamedTypeSymbol GetRequiredType(SemanticModel model, string typeName)
-    {
-        INamedTypeSymbol? typeSymbol = model.Compilation.GetTypeByMetadataName(typeName);
-        if (typeSymbol is null)
-        {
-            throw new InvalidOperationException($"Failed to resolve {typeName}, is it in a referenced assembly?");
-        }
-        return typeSymbol;
     }
 
     [Flags]
