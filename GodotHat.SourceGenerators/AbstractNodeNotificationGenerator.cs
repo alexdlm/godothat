@@ -102,7 +102,7 @@ public abstract class AbstractNodeNotificationGenerator : IIncrementalGenerator
 
         if (primaryAttribute is not null)
         {
-            if (method.Arity != 0)
+            if (method.Parameters.Length != 0)
             {
                 diagnostics.Add(Diagnostics.CreateMethodShouldHaveNoParams(classSymbol, primaryAttribute, method));
             }

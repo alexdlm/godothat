@@ -1,43 +1,40 @@
 ﻿using System.Collections.Immutable;
-using System.Diagnostics.CodeAnalysis;
-using System.Linq.Expressions;
-using JetBrains.Annotations;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace GodotHat.SourceGenerators;
 
-#if NEVER
-
-public abstract class ScriptMethodsGenerator : IIncrementalGenerator
+[Generator(LanguageNames.CSharp)]
+public class ScriptMethodsGenerator : IIncrementalGenerator
 {
-    protected abstract string AttributeFullName { get; }
-    protected abstract string AttributeShortName { get; }
-    protected abstract string OverrideEventFunctionName { get; }
-    protected abstract bool AllowDisposableReturns { get; }
-
     public virtual void Initialize(IncrementalGeneratorInitializationContext context)
     {
         IncrementalValueProvider<ImmutableArray<ClassToProcess>> nodeTypes = context.SyntaxProvider
             .CreateSyntaxProvider(
                 (syntaxNode, _) => syntaxNode is ClassDeclarationSyntax,
-                this.GetNode)
+                GetNode)
             .Where(n => n is not null)
             .Collect()!;
 
         context.RegisterSourceOutput(nodeTypes, this.GenerateNodeAdditions);
     }
 
-    protected virtual ClassToProcess? GetNode(
+    private static ClassToProcess? GetNode(
         GeneratorSyntaxContext context,
         CancellationToken cancellationToken)
     {
-        INamedTypeSymbol typeNodeClass = GetRequiredType(context.SemanticModel, "Godot.Node");
-        INamedTypeSymbol typeAttribute = GetRequiredType(context.SemanticModel, this.AttributeFullName);
-        INamedTypeSymbol typeIDisposable = GetRequiredType(context.SemanticModel, "System.IDisposable");
+        INamedTypeSymbol typeNodeClass = GeneratorUtil.GetRequiredType(context.SemanticModel, "Godot.Node");
         INamedTypeSymbol typeAutoDisposeAttribute =
-            GetRequiredType(context.SemanticModel, "GodotHat.AutoDisposeAttribute");
+            GeneratorUtil.GetRequiredType(context.SemanticModel, "GodotHat.AutoDisposeAttribute");
+        INamedTypeSymbol typeOnEnterTreeAttribute =
+            GeneratorUtil.GetRequiredType(context.SemanticModel, "GodotHat.OnEnterTreeAttribute");
+        INamedTypeSymbol typeOnExitTreeAttribute =
+            GeneratorUtil.GetRequiredType(context.SemanticModel, "GodotHat.OnExitTreeAttribute");
+        INamedTypeSymbol typeOnReadyAttribute =
+            GeneratorUtil.GetRequiredType(context.SemanticModel, "GodotHat.OnReadyAttribute");
+        INamedTypeSymbol sceneUniqueNameAttribute =
+            GeneratorUtil.GetRequiredType(context.SemanticModel, "GodotHat.SceneUniqueNameAttribute");
 
         var classSyntaxNode = (ClassDeclarationSyntax)context.Node;
         bool isPartial = classSyntaxNode.Modifiers.Any(m => m.IsKind(SyntaxKind.PartialKeyword));
@@ -45,159 +42,62 @@ public abstract class ScriptMethodsGenerator : IIncrementalGenerator
         var diagnostics = new List<Diagnostic>();
 
         INamedTypeSymbol? classSymbol = context.SemanticModel.GetDeclaredSymbol(classSyntaxNode, cancellationToken);
-        if (classSymbol is null || !DoesExtendClass(classSymbol.BaseType, typeNodeClass))
+        if (classSymbol is null || !GeneratorUtil.DoesExtendClass(classSymbol.BaseType, typeNodeClass))
         {
             return null;
         }
 
-        bool hasGodotImpl = !classSymbol.GetMembers(this.OverrideEventFunctionName).IsEmpty;
-        List<MethodCall> primaryMethodCalls = classSymbol.GetMembers()
-            .Where(m => m.Kind == SymbolKind.Method)
+        // For the moment, we don't care about exposing ad-hoc C# methods, we probably will need to reproduce the godot
+        // marshalling in the future though.
+        // Basically we want to generate enough for the standard methods to be callable, whether defined by our generators
+        // or manually.
+
+        // TODO: provide diagnostic for methods that do not fit this model! OTOH putting enough work in to identify
+        //       these is probably close to just implementing anyway.
+
+        var members = classSymbol.GetMembers();
+
+
+        var methods = members
+            .Where(s => s is { Kind: SymbolKind.Method, IsImplicitlyDeclared: false, IsStatic: false })
             .Cast<IMethodSymbol>()
+            .Where(m => m.MethodKind == MethodKind.Ordinary && m.RefKind == RefKind.None)
             .Select(
-                m => GetMethodCall(
-                    classSymbol,
-                    m,
-                    this.AllowDisposableReturns,
-                    typeIDisposable,
-                    typeAutoDisposeAttribute,
-                    typeAttribute))
-            .Where(m => m?.ShouldCallFromPrimary == true)
-            .ToList()!;
+                m =>
+                {
+                    GodotSourceGeneratorsUtil.GodotType? returnType =
+                        GodotSourceGeneratorsUtil.GetGodotType(m.ReturnType);
+                    if (!m.ReturnsVoid && returnType is null)
+                    {
+                        return null;
+                    }
 
-        diagnostics.AddRange(primaryMethodCalls.SelectMany(m => m.Diagnostics));
+                    // TODO: convert params
+                    List<GodotSourceGeneratorsUtil.GodotType?> arguments = m.Parameters
+                        .Select(p => p.Type)
+                        .Select(GodotSourceGeneratorsUtil.GetGodotType)
+                        .ToList();
 
-        if (!isPartial && primaryMethodCalls.Count > 0)
-        {
-            // Probably redundant with Godot's own diagnostics but /shrug
-            diagnostics.Add(
-                Diagnostic.Create(
-                    new DiagnosticDescriptor(
-                        "GH0001",
-                        "Node class with GodotHat attributes is not partial",
-                        " {0} class declaration should have partial modifier so source can be generated.",
-                        "GodotHat.generation",
-                        DiagnosticSeverity.Warning,
-                        true),
-                    classSymbol.Locations.FirstOrDefault(),
-                    classSymbol.Name,
-                    classSymbol.ContainingNamespace.ToString()));
-        }
+                    if (arguments.Count > 0 && arguments.Any(t => t is null))
+                    {
+                        return null;
+                    }
+
+                    return new GodotSourceGeneratorsUtil.GodotMethod(m.Name, returnType, m, arguments!);
+                })
+            .Where(m => m is not null)
+            .Select(m => m!)
+            .ToList();
 
         return new ClassToProcess(
             classSyntaxNode,
             classSymbol,
-            primaryMethodCalls,
-            new List<string>(),
-            hasGodotImpl,
+            methods,
             diagnostics);
     }
 
-    protected static MethodCall? GetMethodCall(
-        INamedTypeSymbol classSymbol,
-        IMethodSymbol method,
-        bool allowDisposableReturns,
-        INamedTypeSymbol typeIDisposable,
-        INamedTypeSymbol typeAutoDisposeAttribute,
-        params INamedTypeSymbol[] typePrimaryAttributes)
-    {
-        bool returnsVoid = method.ReturnsVoid;
-        bool returnsDisposable = DoesImplementInterface(method.ReturnType, typeIDisposable);
-        INamedTypeSymbol? primaryAttribute = Array.Find(
-            typePrimaryAttributes,
-            attr => method.GetAttributes().Any(a => SymbolEqualityComparer.Default.Equals(a.AttributeClass, attr)));
-        bool hasAutoDisposeAttribute = method.GetAttributes()
-            .Any(a => SymbolEqualityComparer.Default.Equals(a.AttributeClass, typeAutoDisposeAttribute));
 
-        MethodCallType type = 0;
-        var diagnostics = new List<Diagnostic>();
-
-        if (primaryAttribute is not null)
-        {
-            if (method.Arity != 0)
-            {
-                diagnostics.Add(
-                    Diagnostic.Create(
-                        new DiagnosticDescriptor(
-                            "GH0003",
-                            $"Method with attribute [{primaryAttribute.Name}] must not take any parameters.",
-                            $" {classSymbol.Name}.{method.Name} method declaration should have an empty parameter list.",
-                            "GodotHat.generation",
-                            DiagnosticSeverity.Warning,
-                            true),
-                        classSymbol.Locations.FirstOrDefault()));
-            }
-            else
-            {
-                type |= MethodCallType.PrimaryEvent;
-            }
-
-            if (allowDisposableReturns && returnsDisposable)
-            {
-                type |= MethodCallType.DisposeOnExitTree;
-            }
-
-            if (!returnsVoid && !(allowDisposableReturns && returnsDisposable))
-            {
-                diagnostics.Add(
-                    Diagnostic.Create(
-                        new DiagnosticDescriptor(
-                            "GH0004",
-                            $"Method with attribute [{primaryAttribute.Name}] should return void.",
-                            $" {classSymbol.Name}.{method.Name} should return void.",
-                            "GodotHat.generation",
-                            DiagnosticSeverity.Warning,
-                            true),
-                        classSymbol.Locations.FirstOrDefault()));
-            }
-        }
-
-        if (hasAutoDisposeAttribute)
-        {
-            if (method.DeclaredAccessibility != Accessibility.Private)
-            {
-                diagnostics.Add(
-                    Diagnostic.Create(
-                        new DiagnosticDescriptor(
-                            "GH0005",
-                            "Method with attribute [AutoDispose] should be private",
-                            $" {classSymbol.Name}.{method.Name} should be private. The generated Update{method.Name} method will be public",
-                            "GodotHat.generation",
-                            DiagnosticSeverity.Warning,
-                            true),
-                        classSymbol.Locations.FirstOrDefault()));
-            }
-
-            if (returnsDisposable)
-            {
-                type |= MethodCallType.DisposeOnExitTree | MethodCallType.AutoDisposable;
-            }
-            else
-            {
-                diagnostics.Add(
-                    Diagnostic.Create(
-                        new DiagnosticDescriptor(
-                            "GH0006",
-                            "Method with attribute [AutoDispose] should return IDisposable",
-                            $" {classSymbol.Name}.{method.Name} should return IDisposable (or IDisposable?).",
-                            "GodotHat.generation",
-                            DiagnosticSeverity.Warning,
-                            true),
-                        classSymbol.Locations.FirstOrDefault()));
-            }
-        }
-
-        if (type != 0 || diagnostics.Any())
-        {
-            return new MethodCall(method.Name, type, method, diagnostics);
-        }
-
-        return null;
-    }
-
-    private void GenerateNodeAdditions(
-        SourceProductionContext context,
-        ImmutableArray<ClassToProcess> nodeTypes)
+    private void GenerateNodeAdditions(SourceProductionContext context, ImmutableArray<ClassToProcess> nodeTypes)
     {
         if (nodeTypes.IsEmpty)
         {
@@ -208,26 +108,8 @@ public abstract class ScriptMethodsGenerator : IIncrementalGenerator
         {
             classToProcess.Diagnostics.ForEach(context.ReportDiagnostic);
 
-            if (IsAnythingToGenerate(classToProcess))
+            if (classToProcess.Methods.Count > 0)
             {
-                if (classToProcess.HasTargetMethodAlready)
-                {
-                    context.ReportDiagnostic(
-                        Diagnostic.Create(
-                            new DiagnosticDescriptor(
-                                "GH0002",
-                                "Node class with GodotHat attributes already implements Godot override",
-                                $" {{0}} class declaration should not have a {this.OverrideEventFunctionName} " +
-                                $"function defined, so it can be generated instead. Use [{this.AttributeShortName}] attribute " +
-                                $"on an method instead, or remove the other [{this.AttributeShortName}] members.",
-                                "GodotHat.generation",
-                                DiagnosticSeverity.Warning,
-                                true),
-                            classToProcess.Symbol.Locations.FirstOrDefault(),
-                            classToProcess.Symbol.Name,
-                            classToProcess.Symbol.ContainingNamespace.ToString()));
-                }
-
                 this.GenerateNodeAdditions(
                     context,
                     classToProcess);
@@ -235,28 +117,90 @@ public abstract class ScriptMethodsGenerator : IIncrementalGenerator
         }
     }
 
-    private static bool IsAnythingToGenerate(ClassToProcess classToProcess)
+    private static string GodotMethodToBridgeMethodInfo(GodotSourceGeneratorsUtil.GodotMethod method, string idx)
     {
-        bool isPartial = classToProcess.Syntax.Modifiers.Any(m => m.IsKind(SyntaxKind.PartialKeyword));
-        return isPartial && (classToProcess.MethodSources.Any() || classToProcess.MethodsToCall.Any());
+        return @$"    private static readonly global::Godot.Bridge.MethodInfo MethodInfo_{method.Name}{idx} = new(
+        name: MethodName.{method.Name},
+        returnVal: new(
+            type: global::Godot.Variant.Type.{method.ReturnType?.VariantType ?? GodotVariantType.Nil},
+            name: new global::Godot.StringName(),
+            hint: global::Godot.PropertyHint.None,
+            hintString: """",
+            usage: global::Godot.PropertyUsageFlags.Storage | global::Godot.PropertyUsageFlags.Editor,
+            exported: false),
+        flags: global::Godot.MethodFlags.Normal,
+        arguments: null,
+        defaultArguments: null);
+
+";
     }
 
-    private void GenerateNodeAdditions(
-        SourceProductionContext context,
-        ClassToProcess classToProcess)
+    private static string GodotMethodToInvokeCondition(GodotSourceGeneratorsUtil.GodotMethod method, string _idx)
+    {
+        string args = method.Arguments is null
+            ? ""
+            : string.Join(
+                ",",
+                method.Arguments.Select(
+                    (p, index) =>
+                        $@"
+                global::Godot.NativeInterop.VariantUtils.ConvertTo<{p.QualifiedName}>(args[{index}])"));
+
+        return $@"        if (method == MethodName.{method.Name} && args.Count == {method.Arguments?.Count ?? 0})
+        {{
+            {method.Name}({args});
+            ret = default;
+            return true;
+        }}
+";
+    }
+
+    private void GenerateNodeAdditions(SourceProductionContext context, ClassToProcess classToProcess)
     {
         INamedTypeSymbol classSymbol = classToProcess.Symbol;
         ClassDeclarationSyntax classSyntaxNode = classToProcess.Syntax;
 
-        string calls = string.Concat(
-            classToProcess.MethodsToCall
-                .Select(m => m.PrimaryCallString)
-                .Where(m => m is not null)
-                .Select(source => $"\n        {source};"));
+        INamedTypeSymbol? godotBaseClass = GodotSourceGeneratorsUtil.GetGodotParentClass(classSymbol);
+        if (godotBaseClass == null)
+        {
+            throw new Exception(
+                $"Processing a class ({classSymbol.Name}) that does not derive from a Godot base class! ");
+        }
+        if (godotBaseClass.GetTypeMembers("MethodName").IsEmpty)
+        {
+            throw new Exception(
+                $"Parent class ({godotBaseClass.Name}) of {classSymbol.Name} does not contain MethodName inner class!");
+        }
 
-        string methodSources = string.Concat(
-            classToProcess.MethodSources
-                .SelectMany(source => $"\n\n    {source}"));
+        var lf = SyntaxFactory.ElasticCarriageReturnLineFeed;
+
+        List<string> methodNames = classToProcess.Methods.Select(m => m.Name).Distinct().OrderBy(m => m).ToList();
+        string methodNameMembers = string.Concat(
+            methodNames
+                .Select(m => $"        public new static readonly global::Godot.StringName {m} = \"{m}\";{lf}"));
+
+        var orderedMethods = classToProcess.Methods
+            .GroupBy(item => item.Name)
+            .SelectMany(
+                group => group.Select(
+                    (method, index) => (method, idx: index > 0 ? $"{index + 1}" : ""))) // name, idx if idx > 0
+            .OrderBy(m => m.method.Name)
+            .ThenBy(m => m.idx)
+            .ToList();
+
+        string methodNameConstants =
+            string.Concat(orderedMethods.Select(m => GodotMethodToBridgeMethodInfo(m.method, m.idx)));
+
+        string methodNameMethodsListAdds = string.Concat(
+            orderedMethods
+                .Select(m => $"        methods.Add(MethodInfo_{m.method.Name}{m.idx});{lf}"));
+
+        string methodInvokes = String.Concat(
+            orderedMethods
+                .Select(m => GodotMethodToInvokeCondition(m.method, m.idx)));
+
+        string methodHasCases = String.Concat(
+            orderedMethods.Select(m => $"        if (method == MethodName.{m.method.Name}) return true;{lf}"));
 
         string code = @$"// Generated code via {this.GetType().FullName}
 namespace {classSymbol.ContainingNamespace};
@@ -264,155 +208,61 @@ namespace {classSymbol.ContainingNamespace};
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using Godot.NativeInterop;
 using Godot;
 
 #nullable enable
 
 {classSyntaxNode.Modifiers} class {classSymbol.Name}
 {{
-
-    public override void {this.OverrideEventFunctionName}()
+    #pragma warning disable CS0109 // Disable warning about redundant 'new' keyword
+    public new class MethodName : global::{godotBaseClass.ToDisplayString(NullableFlowState.None)}.MethodName
     {{
-        // Generated code, to add other calls add [{this.AttributeShortName}] attributes to methods
-{calls}
-    }}{methodSources}
+{methodNameMembers}
+    }}
+
+{methodNameConstants}
+    internal new static global::System.Collections.Generic.List<global::Godot.Bridge.MethodInfo> GetGodotMethodList()
+    {{
+        var methods = new global::System.Collections.Generic.List<global::Godot.Bridge.MethodInfo>({methodNames.Count});
+{methodNameMethodsListAdds}
+        return methods;
+    }}
+
+    #pragma warning restore CS0109
+
+    protected override bool InvokeGodotClassMethod(in godot_string_name method, NativeVariantPtrArgs args, out godot_variant ret)
+    {{
+{methodInvokes}
+        return base.InvokeGodotClassMethod(method, args, out ret);
+    }}
+
+    protected override bool HasGodotClassMethod(in godot_string_name method)
+    {{
+{methodHasCases}
+        return base.HasGodotClassMethod(method);
+    }}
 }}
 ";
 
         context.AddSource(
-            $"{classSymbol.ContainingNamespace}.{classSymbol.Name}_{this.AttributeShortName}.generated.cs",
+            $"{classSymbol.ContainingNamespace}.{classSymbol.Name}_ScriptMethods.generated.cs",
             code);
     }
 
-    private static IEnumerable<ITypeSymbol> GetThisAndBaseTypes(ITypeSymbol? symbol)
-    {
-        if (symbol is null)
-        {
-            yield break;
-        }
 
-        ITypeSymbol? current = symbol;
-        do
-        {
-            yield return current;
-            current = current.BaseType;
-        } while (current is not null);
-    }
-
-    protected static bool DoesExtendClass(ITypeSymbol? symbol, ISymbol typeNodeClass)
-    {
-        return GetThisAndBaseTypes(symbol).Any(t => SymbolEqualityComparer.Default.Equals(t, typeNodeClass));
-    }
-
-    protected static bool DoesImplementInterface(ITypeSymbol? symbol, ISymbol typeNodeInterface)
-    {
-        if (symbol is null)
-        {
-            return false;
-        }
-        return SymbolEqualityComparer.Default.Equals(symbol, typeNodeInterface) ||
-               symbol.AllInterfaces.Any(i => SymbolEqualityComparer.Default.Equals(i, typeNodeInterface));
-    }
-
-    protected static INamedTypeSymbol GetRequiredType(SemanticModel model, string typeName)
-    {
-        INamedTypeSymbol? typeSymbol = model.Compilation.GetTypeByMetadataName(typeName);
-        if (typeSymbol is null)
-        {
-            throw new InvalidOperationException($"Failed to resolve {typeName}, is it in a referenced assembly?");
-        }
-        return typeSymbol;
-    }
-
-    [Flags]
-    protected enum MethodCallType
-    {
-        PrimaryEvent = (1 << 0),
-        DisposeOnExitTree = (1 << 1),
-        AutoDisposable = (2 << 1),
-    }
-
-    protected record class MethodCall(
-        string Name,
-        MethodCallType Type,
-        IMethodSymbol? Symbol = null,
-        List<Diagnostic>? Diagnostics = null)
-    {
-        public string Name { get; } = Name;
-        public MethodCallType Type { get; } = Type;
-        public IMethodSymbol? Symbol { get; } = Symbol;
-        public List<Diagnostic>? Diagnostics { get; } = Diagnostics;
-
-        public bool ShouldCallFromPrimary => (this.Type & MethodCallType.PrimaryEvent) != 0;
-        public bool ShouldCallDisposable => (this.Type & MethodCallType.DisposeOnExitTree) != 0;
-        public bool IsAutoDisposable => (this.Type & MethodCallType.AutoDisposable) != 0;
-        public string? DisposableMemberName => this.ShouldCallDisposable ? $"__disposable_{this.Name}" : null;
-        public string? DisposableMethodName => this.IsAutoDisposable
-            ? $"Dispose{this.Name}"
-            : this.ShouldCallDisposable
-                ? $"__Dispose_{this.Name}"
-                : null;
-
-        public string? PrimaryCallString
-        {
-            get
-            {
-                if (!this.ShouldCallFromPrimary)
-                {
-                    return null;
-                }
-
-                if (this.ShouldCallDisposable)
-                {
-                    if (this.IsAutoDisposable)
-                    {
-                        return $"Update{this.Name}()";
-                    }
-                    return $"{this.DisposableMemberName} = {this.Name}()";
-                }
-
-                return $"{this.Name}()";
-            }
-        }
-
-        public string? DisposeCallString
-        {
-            get
-            {
-                if (!this.ShouldCallDisposable)
-                {
-                    return null;
-                }
-
-                if (this.IsAutoDisposable)
-                {
-                    return $"Dispose{this.Name}()";
-                }
-
-                return $"__Dispose_{this.Name}()";
-            }
-        }
-    }
-
-    protected record ClassToProcess(
+    private record ClassToProcess(
         ClassDeclarationSyntax Syntax,
         INamedTypeSymbol Symbol,
-        List<MethodCall> MethodsToCall,
-        List<string> MethodSources,
-        bool HasTargetMethodAlready,
+        List<GodotSourceGeneratorsUtil.GodotMethod> Methods,
         List<Diagnostic> Diagnostics)
     {
         public ClassDeclarationSyntax Syntax { get; } = Syntax;
 
         public INamedTypeSymbol Symbol { get; } = Symbol;
 
-        public List<MethodCall> MethodsToCall { get; } = MethodsToCall;
+        public List<GodotSourceGeneratorsUtil.GodotMethod> Methods { get; } = Methods;
 
         public List<Diagnostic> Diagnostics { get; } = Diagnostics;
-
-        public List<string> MethodSources { get; } = MethodSources;
-
-        public bool HasTargetMethodAlready { get; } = HasTargetMethodAlready;
     }
 }
-#endif //0
