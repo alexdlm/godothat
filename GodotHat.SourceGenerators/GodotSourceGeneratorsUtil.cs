@@ -27,31 +27,38 @@ namespace GodotHat.SourceGenerators;
 
 internal static partial class GodotSourceGeneratorsUtil
 {
-    public record GodotType(string? NameSpace, string Name, GodotVariantType VariantType)
+    public record GodotType(string? NameSpace, string TypeName, GodotVariantType VariantType)
     {
         public static readonly GodotType Void = new GodotType(null, "void", GodotVariantType.Nil);
 
         public string? NameSpace { get; } = NameSpace;
-        public string Name { get; } = Name;
-        public string QualifiedName => this.NameSpace is not null ? $"global::{this.NameSpace}.{this.Name}" : this.Name;
+        public string TypeName { get; } = TypeName;
+        public string QualifiedName =>
+            this.NameSpace is not null ? $"global::{this.NameSpace}.{this.TypeName}" : this.TypeName;
 
         public GodotVariantType VariantType { get; } = VariantType;
 
         // TODO: Add hints if those ever become relevant
     }
 
+    public record GodotArgument(GodotType Type, string Name)
+    {
+        public GodotType Type { get; } = Type;
+        public string Name { get; } = Name;
+    }
+
     public record GodotMethod(
         string Name,
         GodotType? ReturnType,
         IMethodSymbol? Symbol = null,
-        List<GodotType>? Arguments = null,
+        List<GodotArgument>? Arguments = null,
         List<Diagnostic>? Diagnostics = null)
     {
         public string Name { get; } = Name;
         public GodotType? ReturnType { get; } = ReturnType;
         public IMethodSymbol? Symbol { get; } = Symbol;
         public List<Diagnostic>? Diagnostics { get; } = Diagnostics;
-        public List<GodotType>? Arguments { get; } = Arguments;
+        public List<GodotArgument>? Arguments { get; } = Arguments;
     }
 
 
@@ -98,7 +105,10 @@ internal static partial class GodotSourceGeneratorsUtil
 
         return variantType is null
             ? null
-            : new GodotType(typeSymbol.ContainingNamespace?.ToDisplayString(), typeSymbol.Name, (GodotVariantType)variantType);
+            : new GodotType(
+                typeSymbol.ContainingNamespace?.ToDisplayString(),
+                typeSymbol.Name,
+                (GodotVariantType)variantType);
     }
 
     public static bool IsAssemblyAndNamespace(ITypeSymbol typeSymbol, string assemblyName, string @namespace)

@@ -74,9 +74,15 @@ public class ScriptMethodsGenerator : IIncrementalGenerator
                     }
 
                     // TODO: convert params
-                    List<GodotSourceGeneratorsUtil.GodotType?> arguments = m.Parameters
-                        .Select(p => p.Type)
-                        .Select(GodotSourceGeneratorsUtil.GetGodotType)
+                    List<GodotSourceGeneratorsUtil.GodotArgument?> arguments = m.Parameters
+                        .Select(
+                            p =>
+                            {
+                                var godotType = GodotSourceGeneratorsUtil.GetGodotType(p.Type);
+                                return godotType is not null
+                                    ? new GodotSourceGeneratorsUtil.GodotArgument(godotType, p.Name)
+                                    : null;
+                            })
                         .ToList();
 
                     if (arguments.Count > 0 && arguments.Any(t => t is null))
@@ -192,8 +198,29 @@ public class ScriptMethodsGenerator : IIncrementalGenerator
         }
     }
 
+    private static string GodotArgumentToPropertyInfo(GodotSourceGeneratorsUtil.GodotArgument argument)
+    {
+        var type = argument.Type;
+        return $@"            new (
+                type: global::Godot.Variant.Type.{type.VariantType},
+                name: new global::Godot.StringName(""{argument.Name}""),
+                hint: global::Godot.PropertyHint.None,
+                hintString: """",
+                usage: global::Godot.PropertyUsageFlags.Storage | global::Godot.PropertyUsageFlags.Editor,
+                exported: false),
+";
+    }
+
     private static string GodotMethodToBridgeMethodInfo(GodotSourceGeneratorsUtil.GodotMethod method, string idx)
     {
+        string? arguments = method.Arguments?.Any() ?? false
+            ? string.Concat(method.Arguments.Select(GodotArgumentToPropertyInfo))
+            : null;
+        string argumentsList = method.Arguments?.Any() ?? false
+            ? @$"new() {{
+{arguments}        }}"
+            : "new() {}";
+
         return @$"    private static readonly global::Godot.Bridge.MethodInfo MethodInfo_{method.Name}{idx} = new(
         name: MethodName.{method.Name},
         returnVal: new(
@@ -204,7 +231,7 @@ public class ScriptMethodsGenerator : IIncrementalGenerator
             usage: global::Godot.PropertyUsageFlags.Storage | global::Godot.PropertyUsageFlags.Editor,
             exported: false),
         flags: global::Godot.MethodFlags.Normal,
-        arguments: null,
+        arguments: {argumentsList},
         defaultArguments: null);
 
 ";
@@ -217,9 +244,10 @@ public class ScriptMethodsGenerator : IIncrementalGenerator
             : string.Join(
                 ",",
                 method.Arguments.Select(
-                    (p, index) =>
+                    (arg, index) =>
                         $@"
-                global::Godot.NativeInterop.VariantUtils.ConvertTo<{p.QualifiedName}>(args[{index}])"));
+                // {arg.Name}
+                global::Godot.NativeInterop.VariantUtils.ConvertTo<{arg.Type.QualifiedName}>(args[{index}])"));
 
         return $@"        if (method == MethodName.{method.Name} && args.Count == {method.Arguments?.Count ?? 0})
         {{
