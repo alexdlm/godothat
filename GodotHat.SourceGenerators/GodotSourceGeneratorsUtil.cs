@@ -29,6 +29,8 @@ internal static partial class GodotSourceGeneratorsUtil
 {
     public record GodotType(string? NameSpace, string Name, GodotVariantType VariantType)
     {
+        public static readonly GodotType Void = new GodotType(null, "void", GodotVariantType.Nil);
+
         public string? NameSpace { get; } = NameSpace;
         public string Name { get; } = Name;
         public string QualifiedName => this.NameSpace is not null ? $"global::{this.NameSpace}.{this.Name}" : this.Name;

@@ -33,8 +33,10 @@ public class ScriptMethodsGenerator : IIncrementalGenerator
             GeneratorUtil.GetRequiredType(context.SemanticModel, "GodotHat.OnExitTreeAttribute");
         INamedTypeSymbol typeOnReadyAttribute =
             GeneratorUtil.GetRequiredType(context.SemanticModel, "GodotHat.OnReadyAttribute");
-        INamedTypeSymbol sceneUniqueNameAttribute =
+        INamedTypeSymbol typeSceneUniqueNameAttribute =
             GeneratorUtil.GetRequiredType(context.SemanticModel, "GodotHat.SceneUniqueNameAttribute");
+        INamedTypeSymbol typeIDisposable =
+            GeneratorUtil.GetRequiredType(context.SemanticModel, "System.IDisposable");
 
         var classSyntaxNode = (ClassDeclarationSyntax)context.Node;
         bool isPartial = classSyntaxNode.Modifiers.Any(m => m.IsKind(SyntaxKind.PartialKeyword));
@@ -56,7 +58,6 @@ public class ScriptMethodsGenerator : IIncrementalGenerator
         //       these is probably close to just implementing anyway.
 
         var members = classSymbol.GetMembers();
-
 
         var methods = members
             .Where(s => s is { Kind: SymbolKind.Method, IsImplicitlyDeclared: false, IsStatic: false })
@@ -89,6 +90,42 @@ public class ScriptMethodsGenerator : IIncrementalGenerator
             .Select(m => m!)
             .ToList();
 
+        bool addOnEnterTree = HasAttributesOnAnyMethod(classSymbol.GetMembers(), typeOnEnterTreeAttribute).Any() ||
+                              HasAttributesOnAnyField(classSymbol.GetMembers(), typeSceneUniqueNameAttribute).Any() ||
+                              HasAttributesOnAnyProperty(classSymbol.GetMembers(), typeSceneUniqueNameAttribute).Any();
+        bool addOnExitTree = HasAttributesOnAnyMethod(classSymbol.GetMembers(), typeOnExitTreeAttribute).Any() ||
+                             HasAttributesOnAnyMethod(classSymbol.GetMembers(), typeAutoDisposeAttribute)
+                                 .Any(m => GeneratorUtil.DoesImplementInterface(m.ReturnType, typeIDisposable)) ||
+                             HasAttributesOnAnyMethod(classSymbol.GetMembers(), typeOnReadyAttribute)
+                                 .Any(m => GeneratorUtil.DoesImplementInterface(m.ReturnType, typeIDisposable)) ||
+                             HasAttributesOnAnyMethod(classSymbol.GetMembers(), typeAutoDisposeAttribute)
+                                 .Any(m => GeneratorUtil.DoesImplementInterface(m.ReturnType, typeIDisposable));
+        bool addOnReady = HasAttributesOnAnyMethod(classSymbol.GetMembers(), typeOnReadyAttribute).Any();
+
+        if (addOnEnterTree)
+        {
+            methods.Add(
+                new GodotSourceGeneratorsUtil.GodotMethod(
+                    "_EnterTree",
+                    GodotSourceGeneratorsUtil.GodotType.Void));
+        }
+
+        if (addOnExitTree)
+        {
+            methods.Add(
+                new GodotSourceGeneratorsUtil.GodotMethod(
+                    "_ExitTree",
+                    GodotSourceGeneratorsUtil.GodotType.Void));
+        }
+
+        if (addOnReady)
+        {
+            methods.Add(
+                new GodotSourceGeneratorsUtil.GodotMethod(
+                    "_Ready",
+                    GodotSourceGeneratorsUtil.GodotType.Void));
+        }
+
         return new ClassToProcess(
             classSyntaxNode,
             classSymbol,
@@ -96,6 +133,44 @@ public class ScriptMethodsGenerator : IIncrementalGenerator
             diagnostics);
     }
 
+    private static IEnumerable<IFieldSymbol> HasAttributesOnAnyField(
+        IEnumerable<ISymbol> members,
+        params INamedTypeSymbol[] attributeTypes)
+    {
+        return members.Where(m => m.Kind == SymbolKind.Field)
+            .Cast<IFieldSymbol>()
+            // Do any fields have all attributes
+            .Where(
+                m => attributeTypes.All(
+                    attr => m.GetAttributes()
+                        .Any(a => SymbolEqualityComparer.Default.Equals(a.AttributeClass, attr))));
+    }
+
+    private static IEnumerable<IPropertySymbol> HasAttributesOnAnyProperty(
+        IEnumerable<ISymbol> members,
+        params INamedTypeSymbol[] attributeTypes)
+    {
+        return members.Where(m => m.Kind == SymbolKind.Property)
+            .Cast<IPropertySymbol>()
+            // Do any properties have all attributes
+            .Where(
+                m => attributeTypes.All(
+                    attr => m.GetAttributes()
+                        .Any(a => SymbolEqualityComparer.Default.Equals(a.AttributeClass, attr))));
+    }
+
+    private static IEnumerable<IMethodSymbol> HasAttributesOnAnyMethod(
+        IEnumerable<ISymbol> members,
+        params INamedTypeSymbol[] attributeTypes)
+    {
+        return members.Where(m => m.Kind == SymbolKind.Method)
+            .Cast<IMethodSymbol>()
+            // Do any methods have all attributes
+            .Where(
+                m => attributeTypes.All(
+                    attr => m.GetAttributes()
+                        .Any(a => SymbolEqualityComparer.Default.Equals(a.AttributeClass, attr))));
+    }
 
     private void GenerateNodeAdditions(SourceProductionContext context, ImmutableArray<ClassToProcess> nodeTypes)
     {
