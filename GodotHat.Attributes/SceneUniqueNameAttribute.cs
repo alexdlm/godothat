@@ -1,6 +1,4 @@
-﻿using Godot;
-
-namespace GodotHat;
+﻿namespace GodotHat;
 
 [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property)]
 public sealed class SceneUniqueNameAttribute : Attribute
