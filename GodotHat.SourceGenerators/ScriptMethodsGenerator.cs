@@ -78,7 +78,8 @@ public class ScriptMethodsGenerator : IIncrementalGenerator
                         .Select(
                             p =>
                             {
-                                var godotType = GodotSourceGeneratorsUtil.GetGodotType(p.Type);
+                                GodotSourceGeneratorsUtil.GodotType? godotType =
+                                    GodotSourceGeneratorsUtil.GetGodotType(p.Type);
                                 return godotType is not null
                                     ? new GodotSourceGeneratorsUtil.GodotArgument(godotType, p.Name)
                                     : null;
@@ -200,7 +201,7 @@ public class ScriptMethodsGenerator : IIncrementalGenerator
 
     private static string GodotArgumentToPropertyInfo(GodotSourceGeneratorsUtil.GodotArgument argument)
     {
-        var type = argument.Type;
+        GodotSourceGeneratorsUtil.GodotType? type = argument.Type;
         return $@"                new (
                     type: global::Godot.Variant.Type.{type.VariantType},
                     name: new global::Godot.StringName(""{argument.Name}""),
@@ -211,7 +212,10 @@ public class ScriptMethodsGenerator : IIncrementalGenerator
 ";
     }
 
-    private static string GodotMethodToBridgeMethodInfo(INamedTypeSymbol classSymbol, GodotSourceGeneratorsUtil.GodotMethod method, string idx)
+    private static string GodotMethodToBridgeMethodInfo(
+        INamedTypeSymbol classSymbol,
+        GodotSourceGeneratorsUtil.GodotMethod method,
+        string idx)
     {
         string? arguments = method.Arguments?.Any() ?? false
             ? string.Concat(method.Arguments.Select(GodotArgumentToPropertyInfo))
@@ -276,7 +280,7 @@ public class ScriptMethodsGenerator : IIncrementalGenerator
                 $"Parent class ({godotBaseClass.Name}) of {classSymbol.Name} does not contain MethodName inner class!");
         }
 
-        var lf = SyntaxFactory.ElasticCarriageReturnLineFeed;
+        SyntaxTrivia lf = SyntaxFactory.ElasticCarriageReturnLineFeed;
 
         List<string> methodNames = classToProcess.Methods.Select(m => m.Name).Distinct().OrderBy(m => m).ToList();
         string methodNameMembers = string.Join(
@@ -299,11 +303,11 @@ public class ScriptMethodsGenerator : IIncrementalGenerator
             lf.ToString(),
             orderedMethods.Select(m => $"        MethodInfos.{m.method.Name}{m.idx},"));
 
-        string methodInvokes = String.Concat(
+        string methodInvokes = string.Concat(
             orderedMethods
                 .Select(m => GodotMethodToInvokeCondition(m.method, m.idx)));
 
-        string methodHasCases = String.Concat(
+        string methodHasCases = string.Concat(
             orderedMethods.Select(m => $"        if (method == MethodName.{m.method.Name}) return true;{lf}"));
 
         string code = @$"// Generated code via {this.GetType().FullName}

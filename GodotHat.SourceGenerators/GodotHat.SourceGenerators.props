@@ -1,5 +1,5 @@
 <Project>
     <ItemGroup>
-        <CompilerVisibleProperty Include="GodotDisabledSourceGenerators" />
+        <CompilerVisibleProperty Include="GodotDisabledSourceGenerators"/>
     </ItemGroup>
 </Project>

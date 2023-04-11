@@ -25,7 +25,10 @@ internal static class Diagnostics
         classSymbol.Name,
         classSymbol.ContainingNamespace.ToString());
 
-    public static Diagnostic CreateNodeAlreadyContainsMethod(INamedTypeSymbol classSymbol, string overrideEventFunctionName, string attributeShortName) => Diagnostic.Create(
+    public static Diagnostic CreateNodeAlreadyContainsMethod(
+        INamedTypeSymbol classSymbol,
+        string overrideEventFunctionName,
+        string attributeShortName) => Diagnostic.Create(
         new DiagnosticDescriptor(
             ID_GH0002,
             "Node class with GodotHat attributes already implements Godot override",

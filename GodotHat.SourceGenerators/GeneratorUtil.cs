@@ -44,10 +44,11 @@ internal static class GeneratorUtil
         return typeSymbol;
     }
 
-    public static bool TypeIsOneOf(ITypeSymbol typeSymbol, string assemblyName, string @namespace, HashSet<string> names)
-    {
-        return typeSymbol.ContainingAssembly?.Name == assemblyName &&
-               typeSymbol.ContainingNamespace.Name == @namespace &&
-               names.Contains(typeSymbol.Name);
-    }
+    public static bool TypeIsOneOf(
+        ITypeSymbol typeSymbol,
+        string assemblyName,
+        string @namespace,
+        HashSet<string> names) => typeSymbol.ContainingAssembly?.Name == assemblyName &&
+                                  typeSymbol.ContainingNamespace.Name == @namespace &&
+                                  names.Contains(typeSymbol.Name);
 }

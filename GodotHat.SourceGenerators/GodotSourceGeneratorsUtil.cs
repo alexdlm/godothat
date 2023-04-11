@@ -29,7 +29,7 @@ internal static partial class GodotSourceGeneratorsUtil
 {
     public record GodotType(string? NameSpace, string TypeName, GodotVariantType VariantType)
     {
-        public static readonly GodotType Void = new GodotType(null, "void", GodotVariantType.Nil);
+        public static readonly GodotType Void = new(null, "void", GodotVariantType.Nil);
 
         public string? NameSpace { get; } = NameSpace;
         public string TypeName { get; } = TypeName;
@@ -70,7 +70,7 @@ internal static partial class GodotSourceGeneratorsUtil
             return null;
         }
 
-        GodotVariantType? variantType = typeSymbol.SpecialType switch
+        var variantType = typeSymbol.SpecialType switch
         {
             SpecialType.System_Boolean => GodotVariantType.Bool,
             SpecialType.System_Byte => GodotVariantType.Int,
@@ -111,11 +111,9 @@ internal static partial class GodotSourceGeneratorsUtil
                 (GodotVariantType)variantType);
     }
 
-    public static bool IsAssemblyAndNamespace(ITypeSymbol typeSymbol, string assemblyName, string @namespace)
-    {
-        return typeSymbol.ContainingAssembly?.Name == assemblyName &&
-               typeSymbol.ContainingNamespace?.Name == @namespace;
-    }
+    public static bool IsAssemblyAndNamespace(ITypeSymbol typeSymbol, string assemblyName, string @namespace) =>
+        typeSymbol.ContainingAssembly?.Name == assemblyName &&
+        typeSymbol.ContainingNamespace?.Name == @namespace;
 
     private static GodotVariantType? ConvertStructTypeToVariantType(ITypeSymbol typeSymbol)
     {

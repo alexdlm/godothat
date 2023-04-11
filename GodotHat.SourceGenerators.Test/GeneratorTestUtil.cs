@@ -8,18 +8,12 @@ public static class GeneratorTestUtil
     // Despite being a required assembly it won't be available unless used, ensure Godot & our Attributes are used
     // before GetAssemblies() is called.
     [SceneUniqueName("%foo")]
-    public static Godot.Color ForceAssembliesToBeLoaded {
-        get;
-        set;
-    }
+    public static Godot.Color ForceAssembliesToBeLoaded { get; set; }
 
     [OnEnterTree]
     [OnExitTree]
     [OnReady]
-    public static Godot.Color ForceAssembliesToBeLoadedFoo()
-    {
-        return ForceAssembliesToBeLoaded;
-    }
+    public static Godot.Color ForceAssembliesToBeLoadedFoo() => ForceAssembliesToBeLoaded;
 
     public static (Compilation compilation, IEnumerable<Diagnostic> diagnostics) RunGeneratorCompilation<T>(
         T generator,

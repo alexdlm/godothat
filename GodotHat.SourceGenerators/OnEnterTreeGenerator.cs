@@ -22,7 +22,9 @@ public class OnEnterTreeGenerator : AbstractNodeNotificationGenerator
         GeneratorSyntaxContext context,
         ClassToProcess classToProcess)
     {
-        INamedTypeSymbol typeSceneUniqueNameAttribute = GeneratorUtil.GetRequiredType(context.SemanticModel, "GodotHat.SceneUniqueNameAttribute");
+        INamedTypeSymbol typeSceneUniqueNameAttribute = GeneratorUtil.GetRequiredType(
+            context.SemanticModel,
+            "GodotHat.SceneUniqueNameAttribute");
 
         var fieldsWithAttribute = classToProcess.Symbol.GetMembers()
             .Where(m => m.Kind == SymbolKind.Field)
@@ -31,7 +33,7 @@ public class OnEnterTreeGenerator : AbstractNodeNotificationGenerator
                 f => (Field: f, Attr: f.GetAttributes()
                     .FirstOrDefault(
                         a => SymbolEqualityComparer.Default.Equals(a.AttributeClass, typeSceneUniqueNameAttribute))))
-            .Where(tup => (tup.Attr) is not null)
+            .Where(tup => tup.Attr is not null)
             .ToList();
 
         var propsWithAttribute = classToProcess.Symbol.GetMembers()
@@ -41,7 +43,7 @@ public class OnEnterTreeGenerator : AbstractNodeNotificationGenerator
                 f => (Prop: f, Attr: f.GetAttributes()
                     .FirstOrDefault(
                         a => SymbolEqualityComparer.Default.Equals(a.AttributeClass, typeSceneUniqueNameAttribute))))
-            .Where(tup => (tup.Attr) is not null)
+            .Where(tup => tup.Attr is not null)
             .ToList();
 
         // Nothing to do
@@ -59,9 +61,9 @@ public class OnEnterTreeGenerator : AbstractNodeNotificationGenerator
             string uniqueName = attr!.ConstructorArguments[0].ToCSharpString();
             bool? required = attr.ConstructorArguments.Length == 1
                 ? null
-                : attr.ConstructorArguments[1].Value as Boolean?;
+                : attr.ConstructorArguments[1].Value as bool?;
 
-            bool isActuallyNullable = nullable || (required is not null && required == false);
+            bool isActuallyNullable = nullable || required is not null && required == false;
             string getNodeFunc = isActuallyNullable ? "GetNodeOrNull" : "GetNode";
 
             methodSources.Add(
@@ -80,7 +82,7 @@ public class OnEnterTreeGenerator : AbstractNodeNotificationGenerator
                 ? null
                 : attr.ConstructorArguments[1].Value as bool?;
 
-            bool isActuallyNullable = nullable || (required is not null && required == false);
+            bool isActuallyNullable = nullable || required is not null && required == false;
             string getNodeFunc = isActuallyNullable ? "GetNodeOrNull" : "GetNode";
 
             methodSources.Add(

@@ -25,10 +25,15 @@ public partial class OnExitTreeGenerator : AbstractNodeNotificationGenerator
         GeneratorSyntaxContext context,
         ClassToProcess classToProcess)
     {
-        INamedTypeSymbol typeOnEnterTreeAttribute = GeneratorUtil.GetRequiredType(context.SemanticModel, "GodotHat.OnEnterTreeAttribute");
-        INamedTypeSymbol typeOnReadyAttribute = GeneratorUtil.GetRequiredType(context.SemanticModel, "GodotHat.OnReadyAttribute");
+        INamedTypeSymbol typeOnEnterTreeAttribute = GeneratorUtil.GetRequiredType(
+            context.SemanticModel,
+            "GodotHat.OnEnterTreeAttribute");
+        INamedTypeSymbol typeOnReadyAttribute =
+            GeneratorUtil.GetRequiredType(context.SemanticModel, "GodotHat.OnReadyAttribute");
         INamedTypeSymbol typeIDisposable = GeneratorUtil.GetRequiredType(context.SemanticModel, "System.IDisposable");
-        INamedTypeSymbol typeAutoDisposeAttribute = GeneratorUtil.GetRequiredType(context.SemanticModel, "GodotHat.AutoDisposeAttribute");
+        INamedTypeSymbol typeAutoDisposeAttribute = GeneratorUtil.GetRequiredType(
+            context.SemanticModel,
+            "GodotHat.AutoDisposeAttribute");
 
         List<MethodCall> disposeCalls = classToProcess.Symbol.GetMembers()
             .Where(m => m.Kind == SymbolKind.Method)
@@ -51,8 +56,8 @@ public partial class OnExitTreeGenerator : AbstractNodeNotificationGenerator
             return classToProcess;
         }
 
-        List<string> methodSources = new List<string>(classToProcess.MethodSources);
-        List<MethodCall> methodsToCall = new List<MethodCall>(classToProcess.MethodsToCall);
+        List<string> methodSources = new(classToProcess.MethodSources);
+        List<MethodCall> methodsToCall = new(classToProcess.MethodsToCall);
 
         methodSources.Add(
             @$"private void __DisposeOnExitTree()
@@ -70,11 +75,11 @@ public partial class OnExitTreeGenerator : AbstractNodeNotificationGenerator
             methodSources.Add($"private IDisposable? {call.DisposableMemberName};");
             if (call.IsAutoDisposable)
             {
-                var autoDisposeAttr = call.Symbol?.GetAttributes()
+                AttributeData? autoDisposeAttr = call.Symbol?.GetAttributes()
                     .First(a => SymbolEqualityComparer.Default.Equals(a.AttributeClass, typeAutoDisposeAttribute));
 
                 // Check namedArguments first, because constructor has a default value that can be returned in the ConstructorArguments
-                TypedConstant? accessibilityValue = autoDisposeAttr?.NamedArguments
+                var accessibilityValue = autoDisposeAttr?.NamedArguments
                     .Where(na => na.Key == "Accessibility")
                     .Select(na => na.Value)
                     .FirstOrDefault();
@@ -84,7 +89,7 @@ public partial class OnExitTreeGenerator : AbstractNodeNotificationGenerator
                     accessibilityValue = autoDisposeAttr?.ConstructorArguments.FirstOrDefault();
                 }
 
-                var enumVal = accessibilityValue?.ToCSharpString();
+                string? enumVal = accessibilityValue?.ToCSharpString();
 
                 string accessibility = enumVal switch
                 {

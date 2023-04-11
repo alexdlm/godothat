@@ -231,9 +231,9 @@ using Godot;
     [Flags]
     protected enum MethodCallType
     {
-        PrimaryEvent = (1 << 0),
-        DisposeOnExitTree = (1 << 1),
-        AutoDisposable = (2 << 1),
+        PrimaryEvent = 1 << 0,
+        DisposeOnExitTree = 1 << 1,
+        AutoDisposable = 2 << 1,
     }
 
     protected record class MethodCall(
