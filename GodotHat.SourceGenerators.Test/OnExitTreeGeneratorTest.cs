@@ -1,5 +1,3 @@
-using System.CodeDom.Compiler;
-using System.Diagnostics.CodeAnalysis;
 using FluentAssertions;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
