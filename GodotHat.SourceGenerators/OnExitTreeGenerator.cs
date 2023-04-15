@@ -115,6 +115,7 @@ public partial class OnExitTreeGenerator : AbstractNodeNotificationGenerator
         return new ClassToProcess(
             classToProcess.Syntax,
             classToProcess.Symbol,
+            classToProcess.IsTool,
             methodsToCall,
             methodSources,
             classToProcess.HasTargetMethodAlready,

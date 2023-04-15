@@ -30,6 +30,8 @@ public abstract class AbstractNodeNotificationGenerator : IIncrementalGenerator
     {
         INamedTypeSymbol typeNodeClass = GeneratorUtil.GetRequiredType(context.SemanticModel, "Godot.Node");
         INamedTypeSymbol typeAttribute = GeneratorUtil.GetRequiredType(context.SemanticModel, this.AttributeFullName);
+        INamedTypeSymbol typeToolAttribute =
+            GeneratorUtil.GetRequiredType(context.SemanticModel, "Godot.ToolAttribute");
         INamedTypeSymbol typeIDisposable = GeneratorUtil.GetRequiredType(context.SemanticModel, "System.IDisposable");
         INamedTypeSymbol typeAutoDisposeAttribute = GeneratorUtil.GetRequiredType(
             context.SemanticModel,
@@ -69,9 +71,13 @@ public abstract class AbstractNodeNotificationGenerator : IIncrementalGenerator
             diagnostics.Add(Diagnostics.CreateNodeNotPartial(classSymbol));
         }
 
+        bool isTool = classSymbol.GetAttributes()
+            .Any(attr => SymbolEqualityComparer.Default.Equals(attr.AttributeClass, typeToolAttribute));
+
         return new ClassToProcess(
             classSyntaxNode,
             classSymbol,
+            isTool,
             primaryMethodCalls,
             new List<string>(),
             hasGodotImpl,
@@ -199,24 +205,63 @@ public abstract class AbstractNodeNotificationGenerator : IIncrementalGenerator
             classToProcess.MethodSources
                 .SelectMany(source => $"\n\n    {source}"));
 
+        string functionImpl;
+
+        if (classToProcess.IsTool)
+        {
+            functionImpl = $@"    public override void {this.OverrideEventFunctionName}()
+    {{
+#if TOOLS
+        if (Godot.Engine.IsEditorHint())
+        {{
+            try
+            {{
+                _{this.OverrideEventFunctionName}Internal();
+            }}
+            catch (Exception e)
+            {{
+                GD.PrintErr($""Caught exception in {{this.GetPath()}}.{this.OverrideEventFunctionName}()"", e);
+            }}
+        }}
+        else
+        {{
+#endif //TOOLS
+            _{this.OverrideEventFunctionName}Internal();
+#if TOOLS
+        }}
+#endif //TOOLS
+    }}
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private void _{this.OverrideEventFunctionName}Internal()
+    {{
+        // Generated code, to add other calls add [{this.AttributeShortName}] attributes to methods
+{calls}
+    }}";
+        }
+        else
+        {
+            functionImpl = $@"    public override void {this.OverrideEventFunctionName}()
+    {{
+        // Generated code, to add other calls add [{this.AttributeShortName}] attributes to methods
+{calls}
+    }}";
+        }
+
         string code = @$"// Generated code via {this.GetType().FullName}
 namespace {classSymbol.ContainingNamespace};
 
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Runtime.CompilerServices;
 using Godot;
 
 #nullable enable
 
 {classSyntaxNode.Modifiers} class {classSymbol.Name}
 {{
-
-    public override void {this.OverrideEventFunctionName}()
-    {{
-        // Generated code, to add other calls add [{this.AttributeShortName}] attributes to methods
-{calls}
-    }}{methodSources}
+{functionImpl}{methodSources}
 }}
 ";
 
@@ -298,6 +343,7 @@ using Godot;
     protected record ClassToProcess(
         ClassDeclarationSyntax Syntax,
         INamedTypeSymbol Symbol,
+        bool IsTool,
         List<MethodCall> MethodsToCall,
         List<string> MethodSources,
         bool HasTargetMethodAlready,
@@ -314,5 +360,6 @@ using Godot;
         public List<string> MethodSources { get; } = MethodSources;
 
         public bool HasTargetMethodAlready { get; } = HasTargetMethodAlready;
+        public bool IsTool { get; } = IsTool;
     }
 }

@@ -95,6 +95,7 @@ public class OnEnterTreeGenerator : AbstractNodeNotificationGenerator
         return new ClassToProcess(
             classToProcess.Syntax,
             classToProcess.Symbol,
+            classToProcess.IsTool,
             methodsToCall,
             methodSources,
             classToProcess.HasTargetMethodAlready,
