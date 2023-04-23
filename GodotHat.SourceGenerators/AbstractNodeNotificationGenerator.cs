@@ -211,6 +211,7 @@ public abstract class AbstractNodeNotificationGenerator : IIncrementalGenerator
         {
             functionImpl = $@"    public override void {this.OverrideEventFunctionName}()
     {{
+        base.{this.OverrideEventFunctionName}();
 #if TOOLS
         if (Godot.Engine.IsEditorHint())
         {{
