@@ -4,6 +4,23 @@ namespace GodotHat.SourceGenerators;
 
 internal static class GeneratorUtil
 {
+    public static SymbolDisplayFormat FullyQualifiedParameterFormat { get; } =
+        new SymbolDisplayFormat(
+            globalNamespaceStyle: SymbolDisplayGlobalNamespaceStyle.Included,
+            typeQualificationStyle: SymbolDisplayTypeQualificationStyle.NameAndContainingTypesAndNamespaces,
+            genericsOptions: SymbolDisplayGenericsOptions.IncludeTypeParameters,
+            parameterOptions:
+            SymbolDisplayParameterOptions.IncludeParamsRefOut |
+            SymbolDisplayParameterOptions.IncludeExtensionThis |
+            SymbolDisplayParameterOptions.IncludeType |
+            SymbolDisplayParameterOptions.IncludeName |
+            SymbolDisplayParameterOptions.IncludeOptionalBrackets |
+            SymbolDisplayParameterOptions.IncludeDefaultValue,
+            miscellaneousOptions:
+            SymbolDisplayMiscellaneousOptions.EscapeKeywordIdentifiers |
+            SymbolDisplayMiscellaneousOptions.UseSpecialTypes);
+
+
     public static IEnumerable<ITypeSymbol> GetThisAndBaseTypes(ITypeSymbol? symbol)
     {
         if (symbol is null)

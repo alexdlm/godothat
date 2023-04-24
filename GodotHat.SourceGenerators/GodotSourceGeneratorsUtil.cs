@@ -33,7 +33,7 @@ internal static partial class GodotSourceGeneratorsUtil
         public string? NameSpace { get; } = NameSpace;
         public string TypeName { get; } = TypeName;
         public string QualifiedName =>
-            this.NameSpace is not null ? $"global::{this.NameSpace}.{this.TypeName}" : this.TypeName;
+            this.NameSpace is not null ? $"{this.NameSpace}.{this.TypeName}" : this.TypeName;
 
         public GodotVariantType VariantType { get; } = VariantType;
 
@@ -105,7 +105,7 @@ internal static partial class GodotSourceGeneratorsUtil
         return variantType is null
             ? null
             : new GodotType(
-                typeSymbol.ContainingNamespace?.ToDisplayString(),
+                typeSymbol.ContainingNamespace?.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
                 typeSymbol.Name,
                 (GodotVariantType)variantType);
     }

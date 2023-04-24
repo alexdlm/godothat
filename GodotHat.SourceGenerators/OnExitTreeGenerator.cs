@@ -97,7 +97,7 @@ public partial class OnExitTreeGenerator : AbstractNodeNotificationGenerator
                 };
 
                 methodSources.Add(
-                    $@"{accessibility} void Update{call.Name}({string.Join(", ", call.Symbol!.Parameters.Select(p => p.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)))})
+                    $@"{accessibility} void Update{call.Name}({string.Join(", ", call.Symbol!.Parameters.Select(p => p.ToDisplayString(GeneratorUtil.FullyQualifiedParameterFormat)))})
     {{
         {call.DisposableMethodName}();
         {call.DisposableMemberName} = {call.Name}({string.Join(", ", call.Symbol!.Parameters.Select(p => p.Name))});

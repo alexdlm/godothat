@@ -331,7 +331,7 @@ file static class MethodInfos {{
 {classSyntaxNode.Modifiers} class {classSymbol.Name}
 {{
     #pragma warning disable CS0109 // Disable warning about redundant 'new' keyword
-    public new class MethodName : global::{godotBaseClass.ToDisplayString(NullableFlowState.None)}.MethodName
+    public new class MethodName : {godotBaseClass.ToDisplayString(NullableFlowState.None, SymbolDisplayFormat.FullyQualifiedFormat)}.MethodName
     {{
 {methodNameMembers}
     }}
