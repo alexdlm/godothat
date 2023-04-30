@@ -24,7 +24,7 @@ public class ScriptMethodsGenerator : IIncrementalGenerator
         GeneratorSyntaxContext context,
         CancellationToken cancellationToken)
     {
-        INamedTypeSymbol typeNodeClass = GeneratorUtil.GetRequiredType(context.SemanticModel, "Godot.Node");
+        INamedTypeSymbol typeGodotObjectClass = GeneratorUtil.GetRequiredType(context.SemanticModel, "Godot.GodotObject");
         INamedTypeSymbol typeAutoDisposeAttribute =
             GeneratorUtil.GetRequiredType(context.SemanticModel, "GodotHat.AutoDisposeAttribute");
         INamedTypeSymbol typeOnEnterTreeAttribute =
@@ -44,7 +44,7 @@ public class ScriptMethodsGenerator : IIncrementalGenerator
         var diagnostics = new List<Diagnostic>();
 
         INamedTypeSymbol? classSymbol = context.SemanticModel.GetDeclaredSymbol(classSyntaxNode, cancellationToken);
-        if (classSymbol is null || !GeneratorUtil.DoesExtendClass(classSymbol.BaseType, typeNodeClass))
+        if (classSymbol is null || !GeneratorUtil.DoesExtendClass(classSymbol.BaseType, typeGodotObjectClass))
         {
             return null;
         }
