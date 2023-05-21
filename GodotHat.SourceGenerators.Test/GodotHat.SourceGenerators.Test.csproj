@@ -11,24 +11,24 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="FluentAssertions" Version="6.10.0"/>
-        <PackageReference Include="GodotSharp" Version="4.1.0-dev.1"/>
+        <PackageReference Include="FluentAssertions" Version="6.11.0" />
+        <PackageReference Include="GodotSharp" Version="4.1.0-dev.2" />
         <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.3.4">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.6.0-1.final"/>
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.6.0-1.final" />
         <PackageReference Include="Microsoft.Net.Compilers.Toolset" Version="4.6.0-1.final">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.5.0"/>
-        <PackageReference Include="NETStandard.Library" Version="2.0.3"/>
-        <PackageReference Include="Roslynator.Analyzers" Version="4.2.0">
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.6.0" />
+        <PackageReference Include="NETStandard.Library" Version="2.0.3" />
+        <PackageReference Include="Roslynator.Analyzers" Version="4.3.0">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="xunit" Version="2.4.2"/>
+        <PackageReference Include="xunit" Version="2.4.2" />
         <PackageReference Include="xunit.runner.visualstudio" Version="2.4.5">
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
             <PrivateAssets>all</PrivateAssets>
@@ -40,12 +40,12 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\GodotHat.Attributes\GodotHat.Attributes.csproj"/>
-        <ProjectReference Include="..\GodotHat.SourceGenerators\GodotHat.SourceGenerators.csproj"/>
+        <ProjectReference Include="..\GodotHat.Attributes\GodotHat.Attributes.csproj" />
+        <ProjectReference Include="..\GodotHat.SourceGenerators\GodotHat.SourceGenerators.csproj" />
     </ItemGroup>
 
     <ItemGroup>
-        <Folder Include="GodotHat"/>
+        <Folder Include="GodotHat" />
     </ItemGroup>
 
 </Project>
