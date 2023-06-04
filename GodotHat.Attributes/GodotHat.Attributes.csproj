@@ -13,8 +13,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="GodotSharp" Version="4.1.0-dev.2" />
-        <PackageReference Include="Microsoft.Net.Compilers.Toolset" Version="4.6.0-1.final">
+        <PackageReference Include="GodotSharp" Version="4.1.0-dev.4" />
+        <PackageReference Include="Microsoft.Net.Compilers.Toolset" Version="4.6.0">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
