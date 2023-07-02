@@ -1,13 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
+    <Import Project="..\Common.props" />
+
     <PropertyGroup>
-        <TargetFramework>net7.0</TargetFramework>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <Nullable>enable</Nullable>
+        <OutputType>Exe</OutputType>
         <EnablePreviewFeatures>True</EnablePreviewFeatures>
-        <IncludeBuildOutput>false</IncludeBuildOutput>
-        <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-        <LangVersion>11</LangVersion>
     </PropertyGroup>
 
     <ItemGroup>
@@ -42,10 +39,6 @@
     <ItemGroup>
         <ProjectReference Include="..\GodotHat.Attributes\GodotHat.Attributes.csproj" />
         <ProjectReference Include="..\GodotHat.SourceGenerators\GodotHat.SourceGenerators.csproj" />
-    </ItemGroup>
-
-    <ItemGroup>
-        <Folder Include="GodotHat" />
     </ItemGroup>
 
 </Project>

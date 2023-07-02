@@ -1,15 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
+    <Import Project="..\Common.props" />
+
     <PropertyGroup>
-        <TargetFramework>netstandard2.0</TargetFramework>
-        <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <EnablePreviewFeatures>True</EnablePreviewFeatures>
-        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <IncludeBuildOutput>false</IncludeBuildOutput>
-        <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-        <LangVersion>11</LangVersion>
-        <NoWarn>$(NoWarn);NU5128</NoWarn>
+        <TargetFrameworks>netstandard2.0;</TargetFrameworks>
         <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
     </PropertyGroup>
 
@@ -31,9 +26,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <!-- Package the generator in the analyzer directory of the nuget package -->
-        <None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
-
         <!-- Package the props file -->
         <None Include="GodotHat.SourceGenerators.props" Pack="true" PackagePath="build" Visible="true" />
     </ItemGroup>

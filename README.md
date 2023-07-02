@@ -159,3 +159,9 @@ public override void _ExitTree()
 
 2. Add the godohat nupkg dep to your project.
 3. Add annotations and enjoy
+
+## Acknowledgements
+
+### Godot Code / Inspiration
+
+ScriptMethodsGenerator is a reimplementation godot's ScriptMethodsGenerator to produce similar output.
