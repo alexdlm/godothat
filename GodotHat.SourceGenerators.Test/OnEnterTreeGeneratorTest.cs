@@ -66,13 +66,13 @@ namespace Test.Node;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Runtime.CompilerServices;
 using Godot;
 
 #nullable enable
 
 public partial class MyNode
 {
-
     public override void _EnterTree()
     {
         // Generated code, to add other calls add [OnEnterTree] attributes to methods

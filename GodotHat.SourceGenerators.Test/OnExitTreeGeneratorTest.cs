@@ -108,13 +108,13 @@ namespace Test.Node;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Runtime.CompilerServices;
 using Godot;
 
 #nullable enable
 
 public partial class MyNode
 {
-
     public override void _ExitTree()
     {
         // Generated code, to add other calls add [OnExitTree] attributes to methods
@@ -168,7 +168,7 @@ public partial class MyNode
 
     private IDisposable? __disposable_MyCall;
 
-    protected void UpdateMyCall(bool foo, string? message)
+    protected void UpdateMyCall(bool foo, string message)
     {
         DisposeMyCall();
         __disposable_MyCall = MyCall(foo, message);
@@ -204,13 +204,13 @@ namespace Test.Node;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Runtime.CompilerServices;
 using Godot;
 
 #nullable enable
 
 public partial class MyNode
 {
-
     public override void _ExitTree()
     {
         // Generated code, to add other calls add [OnExitTree] attributes to methods
