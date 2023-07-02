@@ -40,5 +40,4 @@
         <ProjectReference Include="..\GodotHat.Attributes\GodotHat.Attributes.csproj" />
         <ProjectReference Include="..\GodotHat.SourceGenerators\GodotHat.SourceGenerators.csproj" />
     </ItemGroup>
-
 </Project>
