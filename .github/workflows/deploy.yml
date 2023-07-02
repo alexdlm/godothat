@@ -1,0 +1,35 @@
+name: Deploy
+on:
+  workflow_run:
+    workflows:
+      - Build
+    branches:
+      - develop
+      - "refs/tags/*"
+    types:
+      - completed
+
+permissions:
+  actions: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    steps:
+      - uses: nuget/setup-nuget@v1
+        with:
+          nuget-api-key: ${{ secrets.NUGET_API_KEY }}
+          nuget-version: "5.x"
+      - name: Get built packages
+        uses: dawidd6/action-download-artifact@v2
+        with:
+          workflow: dotnet.yml
+          name: nupkgs
+          path: nupkgs
+          if_no_artifact_found: fail
+      - name: Publish nupkgs
+        run: |
+          cd nupkgs
+          ls -l
+          nuget push '*.nupkg' -Source https://api.nuget.org/v3/index.json
