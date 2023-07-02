@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GodotHat.Attributes", "GodotHat.Attributes\GodotHat.Attributes.csproj", "{0C29D43C-9607-49FE-806D-866CCC91ADE2}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GodotHat.SourceGenerators", "GodotHat.SourceGenerators\GodotHat.SourceGenerators.csproj", "{5F76269E-C198-460F-9432-88F149876E1C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GodotHat.SourceGenerators.Test", "GodotHat.SourceGenerators.Test\GodotHat.SourceGenerators.Test.csproj", "{1956D1BC-FB32-4B3C-925F-47939D05AD5B}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{0C29D43C-9607-49FE-806D-866CCC91ADE2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0C29D43C-9607-49FE-806D-866CCC91ADE2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0C29D43C-9607-49FE-806D-866CCC91ADE2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0C29D43C-9607-49FE-806D-866CCC91ADE2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5F76269E-C198-460F-9432-88F149876E1C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5F76269E-C198-460F-9432-88F149876E1C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5F76269E-C198-460F-9432-88F149876E1C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5F76269E-C198-460F-9432-88F149876E1C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1956D1BC-FB32-4B3C-925F-47939D05AD5B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1956D1BC-FB32-4B3C-925F-47939D05AD5B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1956D1BC-FB32-4B3C-925F-47939D05AD5B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1956D1BC-FB32-4B3C-925F-47939D05AD5B}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
