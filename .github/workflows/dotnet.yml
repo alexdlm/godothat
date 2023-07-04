@@ -13,6 +13,9 @@ on:
   pull_request:
     branches:
       - "*"
+  release:
+    types:
+      - created
 permissions:
   contents: read
 
