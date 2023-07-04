@@ -4,15 +4,12 @@
 name: Build
 
 on:
-  push:
-    branches:
-      - "*"
-      - "refs/tags/*"
-    tags:
-      - "*"
   pull_request:
     branches:
       - "*"
+  release:
+    types:
+      - created
 permissions:
   contents: read
 
