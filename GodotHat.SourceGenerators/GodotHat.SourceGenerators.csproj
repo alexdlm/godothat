@@ -3,9 +3,13 @@
     <Import Project="..\Common.props" />
 
     <PropertyGroup>
+        <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <IncludeBuildOutput>false</IncludeBuildOutput>
+        <NoWarn>$(NoWarn);NU5128</NoWarn>
         <Nullable>enable</Nullable>
         <TargetFrameworks>netstandard2.0;</TargetFrameworks>
-        <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+        <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     </PropertyGroup>
 
     <ItemGroup>
@@ -26,7 +30,13 @@
     </ItemGroup>
 
     <ItemGroup>
+        <!-- Package the generator in the analyzer directory of the nuget package -->
+
         <!-- Package the props file -->
         <None Include="GodotHat.SourceGenerators.props" Pack="true" PackagePath="build" Visible="true" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="bin\" />
     </ItemGroup>
 </Project>

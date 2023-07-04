@@ -3,8 +3,7 @@
     <Import Project="..\Common.props" />
     
     <PropertyGroup>
-        <EnablePreviewFeatures>True</EnablePreviewFeatures>
-        <GenerateRequiresPreviewFeaturesAttribute>True</GenerateRequiresPreviewFeaturesAttribute>
+        <Description>Attributes that are processed by GodotHat.SourceGenerators.</Description>
     </PropertyGroup>
 
     <ItemGroup>
