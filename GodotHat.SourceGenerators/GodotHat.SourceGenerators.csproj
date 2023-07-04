@@ -4,21 +4,19 @@
 
     <PropertyGroup>
         <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
-        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
         <IncludeBuildOutput>false</IncludeBuildOutput>
         <NoWarn>$(NoWarn);NU5128</NoWarn>
         <Nullable>enable</Nullable>
         <TargetFrameworks>netstandard2.0;</TargetFrameworks>
         <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+
+        <!-- Don't pack snupkg, but regular package is fair game -->
+        <IsPackable Condition="'$(IncludeSymbols)' == 'true'">false</IsPackable>
     </PropertyGroup>
 
     <ItemGroup>
         <PackageReference Include="JetBrains.Annotations" Version="2022.3.1" PrivateAssets="all" />
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.6.0" PrivateAssets="all" />
-        <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="7.0.1">
-            <PrivateAssets>all</PrivateAssets>
-            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-        </PackageReference>
         <PackageReference Include="Microsoft.Net.Compilers.Toolset" Version="4.6.0">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
