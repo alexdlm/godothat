@@ -37,7 +37,7 @@ jobs:
         run: |
           GIT_VERSION="${{env.git_tag}}"
           PREFIX=$(echo "$GIT_VERSION" | cut -d '-' -f 1)
-          SUFFIX=$(echo "$GIT_VERSION" | cut -d '-' -f 2-)
+          SUFFIX=$(echo "$GIT_VERSION" | cut -d '-' -f 2- -s)
 
           echo "version_prefix=${PREFIX}" >> $GITHUB_ENV
 
