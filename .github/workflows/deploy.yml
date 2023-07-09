@@ -1,18 +1,15 @@
-name: Deploy
+name: Build Release and Deploy
 on:
-  workflow_run:
-    workflows:
-      - Build
-    branches:
-      - develop
-      - "refs/tags/*"
-    types:
-      - completed
+  create:
+    tags:
+    - '*'
 
 permissions:
   actions: read
 
 jobs:
+  build:
+    uses: ./.github/workflows/dotnet.yml
   deploy:
     runs-on: ubuntu-latest
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
