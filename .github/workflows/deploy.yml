@@ -25,6 +25,7 @@ jobs:
           run_id: "${{needs.build.outputs.run_id}}"
           name: nupkgs-release
           path: nupkgs
+          workflow_conclusion: ""
           if_no_artifact_found: fail
       - name: Publish nupkgs
         run: |
