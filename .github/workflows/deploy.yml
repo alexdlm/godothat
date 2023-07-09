@@ -33,8 +33,6 @@ jobs:
           name: nupkgs-release
       - name: Publish nupkgs
         run: |
-          mkdir nupkgs
-          cd nupkgs
-          unzip ../nupkgs-release
+          cd nupkgs-release
           ls -l
           nuget push '*.nupkg' -Source https://api.nuget.org/v3/index.json
