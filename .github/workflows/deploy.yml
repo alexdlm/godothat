@@ -19,21 +19,11 @@ jobs:
         with:
           nuget-api-key: ${{ secrets.NUGET_API_KEY }}
           nuget-version: "5.x"
-#       - name: Get built packages
-#         uses: dawidd6/action-download-artifact@v2
-#         with:
-#           run_id: "${{needs.build.outputs.run_id}}"
-#           name: nupkgs-release
-#           path: nupkgs
-#           workflow_conclusion: ""
-#           if_no_artifact_found: fail
       - name: Get built packages
         uses: actions/download-artifact@v2
         with:
           name: nupkgs-release
       - name: Publish nupkgs
         run: |
-          ls -l
-          cd nupkgs-release
           ls -l
           nuget push '*.nupkg' -Source https://api.nuget.org/v3/index.json
