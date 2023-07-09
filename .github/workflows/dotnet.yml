@@ -70,6 +70,8 @@ jobs:
           path: "**/test-results.trx"
 
       - name: Pack
+        run: dotnet pack --no-build -p:VersionPrefix="${{env.version_prefix}}" -p:VersionSuffix="${{env.version_suffix}}" --output nupkgs
+      - name: Pack Symbols
         run: dotnet pack --no-build -p:IncludeSymbols=true -p:SymbolPackageFormat=snupkg -p:VersionPrefix="${{env.version_prefix}}" -p:VersionSuffix="${{env.version_suffix}}" --output nupkgs
       - name: Upload nupkgs
         uses: actions/upload-artifact@v3.1.2
