@@ -35,6 +35,6 @@ jobs:
         run: |
           mkdir nupkgs
           cd nupkgs
-          unzip ../nupkgs-release.zip
+          unzip ../nupkgs-release
           ls -l
           nuget push '*.nupkg' -Source https://api.nuget.org/v3/index.json
