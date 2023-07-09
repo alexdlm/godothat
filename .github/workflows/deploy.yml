@@ -13,7 +13,6 @@ jobs:
     uses: ./.github/workflows/dotnet.yml
   deploy:
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
       - uses: nuget/setup-nuget@v1
         with:
