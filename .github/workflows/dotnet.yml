@@ -14,8 +14,9 @@ permissions:
 
 jobs:
   Build:
+    outputs:
+      run_id: "${{github.run_id}}"
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v3
         with:
