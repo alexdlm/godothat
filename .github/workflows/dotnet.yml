@@ -45,8 +45,10 @@ jobs:
             fi
 
             echo "version_suffix=$SUFFIX" >> $GITHUB_ENV
+            echo "package_suffix=release" >> $GITHUB_ENV
           else
             echo "version_suffix=dev-${SUFFIX}" >> $GITHUB_ENV
+            echo "package_suffix=snapshot" >> $GITHUB_ENV
           fi
 
       - name: Restore dependencies
@@ -77,5 +79,5 @@ jobs:
         uses: actions/upload-artifact@v3.1.2
         with:
           if-no-files-found: error
-          name: nupkgs
+          name: "nupkgs-${{env.package_suffix}}"
           path: nupkgs
