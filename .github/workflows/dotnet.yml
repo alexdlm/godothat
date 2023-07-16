@@ -31,8 +31,10 @@ jobs:
 
       - name: Get latest git tag
         id: git_tag
-        run: echo "git_tag=$(git describe --tags --dirty=-dirty)" >> $GITHUB_ENV
-
+        run: |
+          if [ -z "$git_tag" ]; then
+            echo "git_tag=$(git describe --tags --dirty=-dirty)" >> $GITHUB_ENV
+          fi
       - name: Set build variables
         id: build-vars
         run: |
