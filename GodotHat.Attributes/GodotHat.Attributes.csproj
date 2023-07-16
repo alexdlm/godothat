@@ -4,10 +4,11 @@
     
     <PropertyGroup>
         <Description>Attributes that are processed by GodotHat.SourceGenerators.</Description>
+        <TargetFrameworks>net7.0;</TargetFrameworks>
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="GodotSharp" Version="4.1.0-rc.2" />
+        <PackageReference Include="GodotSharp" Version="4.1.0" />
         <PackageReference Include="Microsoft.Net.Compilers.Toolset" Version="4.6.0">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
