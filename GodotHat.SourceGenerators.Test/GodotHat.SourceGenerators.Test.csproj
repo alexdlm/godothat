@@ -5,6 +5,7 @@
     <PropertyGroup>
         <OutputType>Exe</OutputType>
         <EnablePreviewFeatures>True</EnablePreviewFeatures>
+        <TargetFrameworks>net7.0;</TargetFrameworks>
     </PropertyGroup>
 
     <ItemGroup>

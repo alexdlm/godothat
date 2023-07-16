@@ -4,7 +4,6 @@
         <ImplicitUsings>true</ImplicitUsings>
         <LangVersion>11</LangVersion>
         <Nullable>enable</Nullable>
-        <TargetFrameworks>net7.0;</TargetFrameworks>
     </PropertyGroup>
 
     <PropertyGroup>

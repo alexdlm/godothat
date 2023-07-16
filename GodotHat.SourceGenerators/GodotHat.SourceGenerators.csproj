@@ -7,7 +7,8 @@
         <IncludeBuildOutput>false</IncludeBuildOutput>
         <NoWarn>$(NoWarn);NU5128</NoWarn>
         <Nullable>enable</Nullable>
-        <TargetFrameworks>netstandard2.0;</TargetFrameworks>
+        <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
+        <TargetFramework>netstandard2.0</TargetFramework>
         <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
 
         <!-- Don't pack snupkg, but regular package is fair game -->
@@ -29,12 +30,8 @@
 
     <ItemGroup>
         <!-- Package the generator in the analyzer directory of the nuget package -->
-
+        <None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/roslyn4.0" Visible="false" />
         <!-- Package the props file -->
         <None Include="GodotHat.SourceGenerators.props" Pack="true" PackagePath="build" Visible="true" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <Folder Include="bin\" />
     </ItemGroup>
 </Project>
