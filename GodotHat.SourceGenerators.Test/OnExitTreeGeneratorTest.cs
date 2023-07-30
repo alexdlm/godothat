@@ -168,7 +168,7 @@ public partial class MyNode
 
     private IDisposable? __disposable_MyCall;
 
-    protected void UpdateMyCall(bool foo, string message)
+    protected void UpdateMyCall(bool foo, string? message)
     {
         DisposeMyCall();
         __disposable_MyCall = MyCall(foo, message);

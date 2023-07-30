@@ -10,7 +10,7 @@ internal static class GeneratorUtil
             typeQualificationStyle: SymbolDisplayTypeQualificationStyle.NameAndContainingTypesAndNamespaces,
             genericsOptions: SymbolDisplayGenericsOptions.IncludeTypeParameters,
             parameterOptions:
-            SymbolDisplayParameterOptions.IncludeParamsRefOut |
+            SymbolDisplayParameterOptions.IncludeModifiers |
             SymbolDisplayParameterOptions.IncludeExtensionThis |
             SymbolDisplayParameterOptions.IncludeType |
             SymbolDisplayParameterOptions.IncludeName |
@@ -18,7 +18,9 @@ internal static class GeneratorUtil
             SymbolDisplayParameterOptions.IncludeDefaultValue,
             miscellaneousOptions:
             SymbolDisplayMiscellaneousOptions.EscapeKeywordIdentifiers |
-            SymbolDisplayMiscellaneousOptions.UseSpecialTypes);
+            SymbolDisplayMiscellaneousOptions.UseSpecialTypes |
+            SymbolDisplayMiscellaneousOptions.IncludeNullableReferenceTypeModifier
+            );
 
 
     public static IEnumerable<ITypeSymbol> GetThisAndBaseTypes(ITypeSymbol? symbol)
