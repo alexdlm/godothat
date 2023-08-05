@@ -1,5 +1,6 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using System.Diagnostics.CodeAnalysis;
 
 namespace GodotHat.SourceGenerators;
 
@@ -56,27 +57,12 @@ public class OnEnterTreeGenerator : AbstractNodeNotificationGenerator
 
         foreach ((IFieldSymbol? fieldSymbol, AttributeData? attr) in fieldsWithAttribute)
         {
-            bool nullable = fieldSymbol.NullableAnnotation == NullableAnnotation.Annotated;
-            TypedConstant? pathArg = attr!.ConstructorArguments.Length > 0
-                ? attr!.ConstructorArguments[0]
-                : attr.NamedArguments
-                    .Where(kvp => kvp.Key == "nodePath")
-                    .Select(kvp => kvp.Value)
-                    .FirstOrDefault(null!);
-            TypedConstant? requiredArg = attr!.ConstructorArguments.Length > 1
-                ? attr!.ConstructorArguments[1]
-                : attr.NamedArguments
-                    .Where(kvp => kvp.Key == "required")
-                    .Select(kvp => kvp.Value)
-                    .FirstOrDefault(null!);
-
-            string? uniqueName = pathArg?.ToCSharpString();
-            if (uniqueName is "null" or "\"\"")
+            if (!ResolveMemberArgs(attr, fieldSymbol.Name, out string uniqueName, out bool required))
             {
-                uniqueName = @$"""%{fieldSymbol.Name}""";
+                throw new InvalidOperationException("Failed to parse attribute args");
             }
-            bool required = requiredArg is null || (attr.ConstructorArguments[1].Value as bool? ?? true);
 
+            bool nullable = fieldSymbol.NullableAnnotation == NullableAnnotation.Annotated;
             bool isActuallyNullable = nullable || !required;
             string getNodeFunc = isActuallyNullable ? "GetNodeOrNull" : "GetNode";
 
@@ -90,14 +76,12 @@ public class OnEnterTreeGenerator : AbstractNodeNotificationGenerator
 
         foreach ((IPropertySymbol? propSymbol, AttributeData? attr) in propsWithAttribute)
         {
+            if (!ResolveMemberArgs(attr, propSymbol.Name, out string uniqueName, out bool required))
+            {
+                throw new InvalidOperationException("Failed to parse attribute args");
+            }
+
             bool nullable = propSymbol.NullableAnnotation == NullableAnnotation.Annotated;
-            string uniqueName = attr!.ConstructorArguments.Length > 0
-                ? attr.ConstructorArguments[0].ToCSharpString()
-                : "%" + propSymbol.Name;
-
-            bool required = attr.ConstructorArguments.Length < 2
-                            || (attr.ConstructorArguments[1].Value as bool? ?? true);
-
             bool isActuallyNullable = nullable || !required;
             string getNodeFunc = isActuallyNullable ? "GetNodeOrNull" : "GetNode";
 
@@ -120,5 +104,42 @@ public class OnEnterTreeGenerator : AbstractNodeNotificationGenerator
             methodSources,
             classToProcess.HasTargetMethodAlready,
             classToProcess.Diagnostics);
+    }
+
+    private static bool ResolveMemberArgs(
+        AttributeData? attr,
+        string symbolName,
+        out string uniqueName,
+        out bool required)
+    {
+        TypedConstant? pathArg = attr!.ConstructorArguments.Length > 0
+            ? attr!.ConstructorArguments[0]
+            : attr.NamedArguments
+                .Where(kvp => kvp.Key == "nodePath")
+                .Select(kvp => kvp.Value)
+                .FirstOrDefault(null!);
+        TypedConstant? requiredArg = attr!.ConstructorArguments.Length > 1
+            ? attr!.ConstructorArguments[1]
+            : attr.NamedArguments
+                .Where(kvp => kvp.Key == "required")
+                .Select(kvp => kvp.Value)
+                .FirstOrDefault(null!);
+
+        string? nameArgValue = pathArg?.ToCSharpString();
+        if (nameArgValue is "null" or "\"\"")
+        {
+            nameArgValue = @$"""%{symbolName}""";
+        }
+
+        required = requiredArg is null || (attr.ConstructorArguments[1].Value as bool? ?? true);
+
+        if (nameArgValue is not null)
+        {
+            uniqueName = nameArgValue;
+            return true;
+        }
+
+        uniqueName = default!;
+        return false;
     }
 }
