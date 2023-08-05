@@ -57,12 +57,25 @@ public class OnEnterTreeGenerator : AbstractNodeNotificationGenerator
         foreach ((IFieldSymbol? fieldSymbol, AttributeData? attr) in fieldsWithAttribute)
         {
             bool nullable = fieldSymbol.NullableAnnotation == NullableAnnotation.Annotated;
-            // TODO: This should support named arguments too
-            string uniqueName = attr!.ConstructorArguments.Length > 0
-                ? attr.ConstructorArguments[0].ToCSharpString()
-                : "%" + fieldSymbol.Name;
-            bool required = attr.ConstructorArguments.Length < 2
-                            || (attr.ConstructorArguments[1].Value as bool? ?? true);
+            TypedConstant? pathArg = attr!.ConstructorArguments.Length > 0
+                ? attr!.ConstructorArguments[0]
+                : attr.NamedArguments
+                    .Where(kvp => kvp.Key == "nodePath")
+                    .Select(kvp => kvp.Value)
+                    .FirstOrDefault(null!);
+            TypedConstant? requiredArg = attr!.ConstructorArguments.Length > 1
+                ? attr!.ConstructorArguments[1]
+                : attr.NamedArguments
+                    .Where(kvp => kvp.Key == "required")
+                    .Select(kvp => kvp.Value)
+                    .FirstOrDefault(null!);
+
+            string? uniqueName = pathArg?.ToCSharpString();
+            if (uniqueName is "null" or "\"\"")
+            {
+                uniqueName = @$"""%{fieldSymbol.Name}""";
+            }
+            bool required = requiredArg is null || (attr.ConstructorArguments[1].Value as bool? ?? true);
 
             bool isActuallyNullable = nullable || !required;
             string getNodeFunc = isActuallyNullable ? "GetNodeOrNull" : "GetNode";
