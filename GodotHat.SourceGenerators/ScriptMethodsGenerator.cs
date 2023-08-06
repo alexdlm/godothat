@@ -78,6 +78,10 @@ public class ScriptMethodsGenerator : IIncrementalGenerator
                         .Select(
                             p =>
                             {
+                                if (p.RefKind != RefKind.None)
+                                {
+                                    return null;
+                                }
                                 GodotSourceGeneratorsUtil.GodotType? godotType =
                                     GodotSourceGeneratorsUtil.GetGodotType(p.Type);
                                 return godotType is not null
