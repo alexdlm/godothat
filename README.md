@@ -74,6 +74,9 @@ private RichTextLabel? OptionalLabel { get; set; }
 
 [SceneUniqueName("%MyLabel")]
 private RichTextLabel Label { get; set; }
+
+[SceneUniqueName]
+private RichTextLabel MyLabel;
 ```
 
 This resolves via `GetNode` (or `GetNodeOrNull` if not required) in a generated `_EnterTree`, so you will get useful
