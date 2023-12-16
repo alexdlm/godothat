@@ -37,6 +37,8 @@ internal static partial class GodotSourceGeneratorsUtil
 
         public GodotVariantType VariantType { get; } = VariantType;
 
+        public string GlobalOrVariantType => string.IsNullOrEmpty(TypeName) ? ("global::Godot.Variant.Type." + VariantType) : TypeName;
+        
         // TODO: Add hints if those ever become relevant
     }
 

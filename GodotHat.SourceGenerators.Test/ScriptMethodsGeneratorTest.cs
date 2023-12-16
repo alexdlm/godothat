@@ -215,7 +215,7 @@ public partial class MyNode
         {
             DoThing3(
                 // arg
-                global::Godot.NativeInterop.VariantUtils.ConvertTo<global::Godot.Variant.Type.String>(args[0]));
+                global::Godot.NativeInterop.VariantUtils.ConvertTo<String>(args[0]));
             ret = default;
             return true;
         }
