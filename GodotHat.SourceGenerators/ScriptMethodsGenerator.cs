@@ -259,7 +259,7 @@ public class ScriptMethodsGenerator : IIncrementalGenerator
                     (arg, index) =>
                         $@"
                 // {arg.Name}
-                global::Godot.NativeInterop.VariantUtils.ConvertTo<global::Godot.Variant.Type.{arg.Type.VariantType}>(args[{index}])"));
+                global::Godot.NativeInterop.VariantUtils.ConvertTo<{arg.Type.GlobalOrVariantType}>(args[{index}])"));
 
         return $@"        if (method == MethodName.{method.Name} && args.Count == {method.Arguments?.Count ?? 0})
         {{
