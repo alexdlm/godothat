@@ -36,6 +36,11 @@ public partial class MyNode : Node
     public void DoThing4(string[] args)
     {{
     }}
+
+    [GodotIgnore]
+    public void DoThingIgnored()
+    {{
+    }}
 }}
 ";
 

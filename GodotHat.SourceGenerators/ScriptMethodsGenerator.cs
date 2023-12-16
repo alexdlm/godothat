@@ -27,6 +27,8 @@ public class ScriptMethodsGenerator : IIncrementalGenerator
         INamedTypeSymbol typeGodotObjectClass = GeneratorUtil.GetRequiredType(context.SemanticModel, "Godot.GodotObject");
         INamedTypeSymbol typeAutoDisposeAttribute =
             GeneratorUtil.GetRequiredType(context.SemanticModel, "GodotHat.AutoDisposeAttribute");
+        INamedTypeSymbol typeGodotIgnoreAttribute =
+            GeneratorUtil.GetRequiredType(context.SemanticModel, "GodotHat.GodotIgnoreAttribute");
         INamedTypeSymbol typeOnEnterTreeAttribute =
             GeneratorUtil.GetRequiredType(context.SemanticModel, "GodotHat.OnEnterTreeAttribute");
         INamedTypeSymbol typeOnExitTreeAttribute =
@@ -63,6 +65,7 @@ public class ScriptMethodsGenerator : IIncrementalGenerator
             .Where(s => s is { Kind: SymbolKind.Method, IsImplicitlyDeclared: false, IsStatic: false })
             .Cast<IMethodSymbol>()
             .Where(m => m.MethodKind == MethodKind.Ordinary && m.RefKind == RefKind.None)
+            .Where(m => !m.GetAttributes().Any(a => SymbolEqualityComparer.Default.Equals(a.AttributeClass, typeGodotIgnoreAttribute)))
             .Select(
                 m =>
                 {
