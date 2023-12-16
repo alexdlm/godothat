@@ -256,7 +256,7 @@ public class ScriptMethodsGenerator : IIncrementalGenerator
                     (arg, index) =>
                         $@"
                 // {arg.Name}
-                global::Godot.NativeInterop.VariantUtils.ConvertTo<{arg.Type.QualifiedName}>(args[{index}])"));
+                global::Godot.NativeInterop.VariantUtils.ConvertTo<global::Godot.Variant.Type.{arg.Type.VariantType}>(args[{index}])"));
 
         return $@"        if (method == MethodName.{method.Name} && args.Count == {method.Arguments?.Count ?? 0})
         {{
@@ -303,9 +303,8 @@ public class ScriptMethodsGenerator : IIncrementalGenerator
         string methodInfoConstants =
             string.Concat(orderedMethods.Select(m => GodotMethodToBridgeMethodInfo(classSymbol, m.method, m.idx)));
 
-        string methodInfoListAdds = string.Join(
-            lf.ToString(),
-            orderedMethods.Select(m => $"        MethodInfos.{m.method.Name}{m.idx},"));
+        string methodInfoListAdds = string.Concat(
+            orderedMethods.Select(m => $"        MethodInfos.{m.method.Name}{m.idx},{lf}"));
 
         string methodInvokes = string.Concat(
             orderedMethods
@@ -328,8 +327,7 @@ using Godot;
 file static class MethodInfos {{
 {methodInfoConstants}
     public static readonly global::System.Collections.Generic.List<global::Godot.Bridge.MethodInfo> GodotMethodList = new() {{
-{methodInfoListAdds}
-    }};
+{methodInfoListAdds}}};
 }}
 
 {classSyntaxNode.Modifiers} class {classSymbol.Name}
