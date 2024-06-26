@@ -99,7 +99,7 @@ internal static class Diagnostics
                 DiagnosticSeverity.Warning,
                 true),
             classSymbol.Locations.FirstOrDefault());
-    
+
     public static Diagnostic CreateClassShouldBeInNamespace(
         INamedTypeSymbol classSymbol) =>
         Diagnostic.Create(
