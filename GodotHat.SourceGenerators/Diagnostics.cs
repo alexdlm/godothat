@@ -11,6 +11,8 @@ internal static class Diagnostics
     private const string ID_GH0004 = "GH0004";
     private const string ID_GH0005 = "GH0005";
     private const string ID_GH0006 = "GH0006";
+
+    private const string ID_GH0007 = "GH0007";
     // ReSharper restore InconsistentNaming
 
     public static Diagnostic CreateNodeNotPartial(INamedTypeSymbol classSymbol) => Diagnostic.Create(
@@ -91,10 +93,22 @@ internal static class Diagnostics
         Diagnostic.Create(
             new DiagnosticDescriptor(
                 ID_GH0006,
-                $"Method with attribute [{attribute.Name}] should return IDispos.",
+                $"Method with attribute [{attribute.Name}] should return IDisposable.",
                 $" {classSymbol.Name}.{method.Name} should return IDisposable (or IDisposable?).",
                 "GodotHat.generation",
                 DiagnosticSeverity.Warning,
+                true),
+            classSymbol.Locations.FirstOrDefault());
+    
+    public static Diagnostic CreateClassShouldBeInNamespace(
+        INamedTypeSymbol classSymbol) =>
+        Diagnostic.Create(
+            new DiagnosticDescriptor(
+                ID_GH0007,
+                $"Class [{classSymbol.Name}] should be in a namespace.",
+                $" {classSymbol.Name} should be in a namespace. Global namespace is unsupported.",
+                "GodotHat.generation",
+                DiagnosticSeverity.Error,
                 true),
             classSymbol.Locations.FirstOrDefault());
 }

@@ -152,7 +152,7 @@ internal static partial class GodotSourceGeneratorsUtil
     private static bool IsDescendedFromGodotObject(ITypeSymbol typeSymbol)
     {
         return GeneratorUtil.GetThisAndBaseTypes(typeSymbol)
-            .Cast<INamedTypeSymbol>()
+            .OfType<INamedTypeSymbol>()
             .Any(s => s.Name == "GodotObject" && IsAssemblyAndNamespace(s, "GodotSharp", "Godot"));
     }
 
@@ -189,7 +189,7 @@ internal static partial class GodotSourceGeneratorsUtil
     public static INamedTypeSymbol? GetGodotParentClass(INamedTypeSymbol classSymbol)
     {
         return GeneratorUtil.GetThisAndBaseTypes(classSymbol)
-            .Cast<INamedTypeSymbol>()
+            .OfType<INamedTypeSymbol>()
             .First(type => type.ContainingAssembly?.Name == "GodotSharp" && type.ContainingNamespace?.Name == "Godot");
     }
 }

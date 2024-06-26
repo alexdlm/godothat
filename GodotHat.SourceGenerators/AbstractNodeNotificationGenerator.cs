@@ -195,6 +195,12 @@ public abstract class AbstractNodeNotificationGenerator : IIncrementalGenerator
         INamedTypeSymbol classSymbol = classToProcess.Symbol;
         ClassDeclarationSyntax classSyntaxNode = classToProcess.Syntax;
 
+        if (classSymbol.ContainingNamespace.IsGlobalNamespace)
+        {
+            context.ReportDiagnostic(Diagnostics.CreateClassShouldBeInNamespace(classSymbol));
+            return;
+        }
+
         string calls = string.Concat(
             classToProcess.MethodsToCall
                 .Select(m => m.PrimaryCallString)
