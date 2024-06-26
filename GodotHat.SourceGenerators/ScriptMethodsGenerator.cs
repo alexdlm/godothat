@@ -275,6 +275,12 @@ public class ScriptMethodsGenerator : IIncrementalGenerator
         INamedTypeSymbol classSymbol = classToProcess.Symbol;
         ClassDeclarationSyntax classSyntaxNode = classToProcess.Syntax;
 
+        if (classSymbol.ContainingNamespace.IsGlobalNamespace)
+        {
+            context.ReportDiagnostic(Diagnostics.CreateClassShouldBeInNamespace(classSymbol));
+            return;
+        }
+
         INamedTypeSymbol? godotBaseClass = GodotSourceGeneratorsUtil.GetGodotParentClass(classSymbol);
         if (godotBaseClass == null)
         {
