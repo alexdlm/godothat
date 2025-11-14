@@ -21,20 +21,18 @@ jobs:
       run_id: "${{github.run_id}}"
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0 # We need tags and commits since the last tag for versioning
       - name: Setup .NET
-        uses: actions/setup-dotnet@v3
+        uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 10.0.x
 
       - name: Get latest git tag
         id: git_tag
         run: |
-          if [ -z "$git_tag" ]; then
-            echo "git_tag=$(git describe --tags --dirty=-dirty)" >> $GITHUB_ENV
-          fi
+          echo "git_tag=$(git describe --tags --dirty=-dirty)" >> $GITHUB_ENV
       - name: Set build variables
         id: build-vars
         run: |
@@ -44,12 +42,10 @@ jobs:
 
           echo "version_prefix=${PREFIX}" >> $GITHUB_ENV
 
-          if [[ "${{ github.ref }}" == "refs/tags"* ]]; then
+          if [[ "${{ github.ref }}" == "refs/tags/"* ]]; then
             if [[ ! -z "$SUFFIX" ]]; then
-              echo "Tag release determined a suffix: $SUFFIX"
-              exit 1;
+              echo "Warning: Tag release has a suffix: $SUFFIX"
             fi
-
             echo "version_suffix=$SUFFIX" >> $GITHUB_ENV
             echo "package_suffix=release" >> $GITHUB_ENV
           else
@@ -60,29 +56,22 @@ jobs:
       - name: Restore dependencies
         run: dotnet restore
       - name: Build
-        run: dotnet build --no-restore -p:VersionPrefix="${{env.version_prefix}}" -p:VersionSuffix="${{env.version_suffix}}"
-      #    - name: Upload a Build Artifact
-      #      uses: actions/upload-artifact@v3.1.2
-      #      with:
-      #        if-no-files-found: warn
-      #        name: build
-      #        path: |
-      #          */bin/Debug
+        run: dotnet build --no-restore -c Release -p:VersionPrefix="${{env.version_prefix}}" -p:VersionSuffix="${{env.version_suffix}}"
       - name: Test
-        run: dotnet test --no-build --verbosity normal -p:VersionPrefix="${{env.version_prefix}}" -p:VersionSuffix="${{env.version_suffix}}" --logger "trx;LogFileName=test-results.trx"
+        run: dotnet test --no-build -c Release --verbosity normal -p:VersionPrefix="${{env.version_prefix}}" -p:VersionSuffix="${{env.version_suffix}}" --logger "trx;LogFileName=test-results.trx"
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v3.1.2
+        uses: actions/upload-artifact@v4
         with:
           name: test-results
           path: "**/test-results.trx"
 
       - name: Pack
-        run: dotnet pack --no-build -c Debug -p:VersionPrefix="${{env.version_prefix}}" -p:VersionSuffix="${{env.version_suffix}}" --output nupkgs
+        run: dotnet pack --no-build -c Release -p:VersionPrefix="${{env.version_prefix}}" -p:VersionSuffix="${{env.version_suffix}}" --output nupkgs
       - name: Pack Symbols
-        run: dotnet pack --no-build -c Debug -p:IncludeSymbols=true -p:SymbolPackageFormat=snupkg -p:VersionPrefix="${{env.version_prefix}}" -p:VersionSuffix="${{env.version_suffix}}" --output nupkgs
+        run: dotnet pack --no-build -c Release -p:IncludeSymbols=true -p:SymbolPackageFormat=snupkg -p:VersionPrefix="${{env.version_prefix}}" -p:VersionSuffix="${{env.version_suffix}}" --output nupkgs
       - name: Upload nupkgs
-        uses: actions/upload-artifact@v3.1.2
+        uses: actions/upload-artifact@v4
         with:
           if-no-files-found: error
           name: "nupkgs-${{env.package_suffix}}"

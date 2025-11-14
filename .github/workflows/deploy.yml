@@ -1,8 +1,8 @@
 name: Build Release and Deploy
 on:
-  create:
+  push:
     tags:
-    - '*'
+      - '*'
 
 permissions:
   actions: read
@@ -18,12 +18,13 @@ jobs:
       - uses: nuget/setup-nuget@v1
         with:
           nuget-api-key: ${{ secrets.NUGET_API_KEY }}
-          nuget-version: "5.x"
+          nuget-version: "6.x"
       - name: Get built packages
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4
         with:
           name: nupkgs-release
       - name: Publish nupkgs
         run: |
           ls -l
-          nuget push '*.nupkg' -Source https://api.nuget.org/v3/index.json
+          nuget push 'GodotHat.Attributes.*.nupkg' -Source https://api.nuget.org/v3/index.json -SkipDuplicate
+          nuget push 'GodotHat.SourceGenerators.*.nupkg' -Source https://api.nuget.org/v3/index.json -SkipDuplicate
