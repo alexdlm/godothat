@@ -65,6 +65,7 @@ public class ScriptMethodsGenerator : IIncrementalGenerator
             .Where(s => s is { Kind: SymbolKind.Method, IsImplicitlyDeclared: false, IsStatic: false })
             .Cast<IMethodSymbol>()
             .Where(m => m.MethodKind == MethodKind.Ordinary && m.RefKind == RefKind.None)
+            .Where(m => !m.IsGenericMethod)  // Filter out generic methods - Godot doesn't support them
             .Where(m => !m.GetAttributes().Any(a => SymbolEqualityComparer.Default.Equals(a.AttributeClass, typeGodotIgnoreAttribute)))
             .Select(
                 m =>
@@ -261,13 +262,30 @@ public class ScriptMethodsGenerator : IIncrementalGenerator
                 // {arg.Name}
                 global::Godot.NativeInterop.VariantUtils.ConvertTo<{arg.Type.GlobalOrVariantType}>(args[{index}])"));
 
-        return $@"        if (method == MethodName.{method.Name} && args.Count == {method.Arguments?.Count ?? 0})
+        // Check if method has a non-void return type
+        bool hasReturnValue = method.ReturnType != null &&
+                              method.ReturnType != GodotSourceGeneratorsUtil.GodotType.Void;
+
+        if (hasReturnValue)
+        {
+            return $@"        if (method == MethodName.{method.Name} && args.Count == {method.Arguments?.Count ?? 0})
+        {{
+            var callRet = {method.Name}({args});
+            ret = global::Godot.NativeInterop.VariantUtils.CreateFrom<{method.ReturnType!.GlobalOrVariantType}>(callRet);
+            return true;
+        }}
+";
+        }
+        else
+        {
+            return $@"        if (method == MethodName.{method.Name} && args.Count == {method.Arguments?.Count ?? 0})
         {{
             {method.Name}({args});
             ret = default;
             return true;
         }}
 ";
+        }
     }
 
     private void GenerateNodeAdditions(SourceProductionContext context, ClassToProcess classToProcess)
@@ -339,10 +357,10 @@ file static class MethodInfos {{
 {methodInfoListAdds}}};
 }}
 
-{classSyntaxNode.Modifiers} class {classSymbol.Name}
+{classSyntaxNode.Modifiers} class {classSymbol.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)}
 {{
     #pragma warning disable CS0109 // Disable warning about redundant 'new' keyword
-    public new class MethodName : {godotBaseClass.ToDisplayString(NullableFlowState.None, SymbolDisplayFormat.FullyQualifiedFormat)}.MethodName
+    public new class MethodName : {godotBaseClass.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}.MethodName
     {{
 {methodNameMembers}
     }}

@@ -93,11 +93,11 @@ internal static partial class GodotSourceGeneratorsUtil
                 TypeKind.Enum => GodotVariantType.Int,
                 TypeKind.Struct => ConvertStructTypeToVariantType(typeSymbol),
                 _ when IsDescendedFromGodotObject(typeSymbol) => GodotVariantType.Object,
-                _ when IsAssemblyAndNamespace(typeSymbol, "GodotSharp", "Godot.Collections") => typeSymbol switch
+                _ when IsGodotCollectionsType(typeSymbol) => typeSymbol switch
                 {
-                    // TODO: we might care if it's generic
-                    { Name: "Array" } => GodotVariantType.Array,
-                    { Name: "Dictionary" } => GodotVariantType.Dictionary,
+                    // Support both generic and non-generic collections
+                    INamedTypeSymbol { Name: "Array" } => GodotVariantType.Array,
+                    INamedTypeSymbol { Name: "Dictionary" } => GodotVariantType.Dictionary,  // Both Dictionary and Dictionary<TKey, TValue>
                     _ => null,
                 },
                 _ => null,
@@ -115,6 +115,10 @@ internal static partial class GodotSourceGeneratorsUtil
     public static bool IsAssemblyAndNamespace(ITypeSymbol typeSymbol, string assemblyName, string @namespace) =>
         typeSymbol.ContainingAssembly?.Name == assemblyName &&
         typeSymbol.ContainingNamespace?.Name == @namespace;
+
+    private static bool IsGodotCollectionsType(ITypeSymbol typeSymbol) =>
+        typeSymbol.ContainingAssembly?.Name == "GodotSharp" &&
+        typeSymbol.ContainingNamespace is { Name: "Collections", ContainingNamespace.Name: "Godot" };
 
     private static GodotVariantType? ConvertStructTypeToVariantType(ITypeSymbol typeSymbol)
     {
@@ -172,12 +176,12 @@ internal static partial class GodotSourceGeneratorsUtil
             SpecialType.System_Int64 => GodotVariantType.PackedInt64Array,
             SpecialType.System_Single => GodotVariantType.PackedFloat32Array,
             SpecialType.System_String => GodotVariantType.PackedStringArray,
-            _ when !IsAssemblyAndNamespace(typeSymbol, "GodotSharp", "Godot") => typeSymbol.Name switch
+            _ when IsAssemblyAndNamespace(typeSymbol, "GodotSharp", "Godot") => typeSymbol.Name switch
             {
                 "Color" => GodotVariantType.PackedColorArray,
-                "NodePath" => GodotVariantType.Array,
-                "Rid" => GodotVariantType.Array,
-                "StringName" => GodotVariantType.Array,
+                "NodePath" => GodotVariantType.Array,  // NodePath[] maps to generic Array
+                "Rid" => GodotVariantType.Array,       // Rid[] maps to generic Array
+                "StringName" => GodotVariantType.Array, // StringName[] maps to generic Array
                 "Vector2" => GodotVariantType.PackedVector2Array,
                 "Vector3" => GodotVariantType.PackedVector3Array,
                 _ => null,

@@ -245,4 +245,151 @@ public partial class MyNode
 ".ReplaceLineEndings());
     }
 
+    [Fact]
+    public void GeneratesReturnValueMarshalling()
+    {
+        const string source = @"
+namespace Test.Node;
+
+using Godot;
+
+public partial class MyNode : Node
+{
+    public int GetNumber() => 42;
+
+    public string GetText() => ""hello"";
+
+    public Vector2 GetVector() => new Vector2(1, 2);
+}
+";
+        SyntaxTree syntaxTree = CSharpSyntaxTree.ParseText(source);
+        (Compilation? outputCompilation, var diagnostics) =
+            GeneratorTestUtil.RunGeneratorCompilation(new ScriptMethodsGenerator(), syntaxTree);
+        diagnostics.Should().BeEmpty();
+
+        string? output = outputCompilation.SyntaxTrees
+            .Single(tree => tree.FilePath.EndsWith("Test.Node.MyNode_ScriptMethods.generated.cs"))
+            ?.ToString();
+
+        // Verify return value marshalling for GetNumber
+        output.Should().Contain("var callRet = GetNumber();");
+        output.Should().Contain("ret = global::Godot.NativeInterop.VariantUtils.CreateFrom<Int32>(callRet);");
+
+        // Verify return value marshalling for GetText
+        output.Should().Contain("var callRet = GetText();");
+        output.Should().Contain("ret = global::Godot.NativeInterop.VariantUtils.CreateFrom<String>(callRet);");
+
+        // Verify return value marshalling for GetVector
+        output.Should().Contain("var callRet = GetVector();");
+        output.Should().Contain("ret = global::Godot.NativeInterop.VariantUtils.CreateFrom<Vector2>(callRet);");
+    }
+
+    [Fact]
+    public void FilterGenericMethods()
+    {
+        const string source = @"
+namespace Test.Node;
+
+using Godot;
+
+public partial class MyNode : Node
+{
+    public void NormalMethod() { }
+
+    public T GenericMethod<T>(T value) => value;
+
+    public void GenericMethod2<T, U>(T a, U b) { }
+}
+";
+        SyntaxTree syntaxTree = CSharpSyntaxTree.ParseText(source);
+        (Compilation? outputCompilation, var diagnostics) =
+            GeneratorTestUtil.RunGeneratorCompilation(new ScriptMethodsGenerator(), syntaxTree);
+        diagnostics.Should().BeEmpty();
+
+        string? output = outputCompilation.SyntaxTrees
+            .Single(tree => tree.FilePath.EndsWith("Test.Node.MyNode_ScriptMethods.generated.cs"))
+            ?.ToString();
+
+        // Generic methods should NOT be included
+        output.Should().NotContain("GenericMethod");
+
+        // Normal method should be included
+        output.Should().Contain("NormalMethod");
+    }
+
+    [Fact]
+    public void SupportTypedDictionaries()
+    {
+        const string source = @"
+namespace Test.Node;
+
+using Godot;
+using Godot.Collections;
+
+public partial class MyNode : Node
+{
+    public void ProcessDictionary(Dictionary dict) { }
+
+    public void ProcessTypedDictionary(Dictionary<string, int> dict) { }
+}
+";
+        SyntaxTree syntaxTree = CSharpSyntaxTree.ParseText(source);
+        (Compilation? outputCompilation, var diagnostics) =
+            GeneratorTestUtil.RunGeneratorCompilation(new ScriptMethodsGenerator(), syntaxTree);
+        diagnostics.Should().BeEmpty();
+
+        // Debug: Print all generated files
+        var generatedFiles = outputCompilation.SyntaxTrees.Where(t => t.FilePath.Contains("generated")).ToList();
+        testOutputHelper.WriteLine($"Generated {generatedFiles.Count} files");
+        foreach (var file in generatedFiles)
+        {
+            testOutputHelper.WriteLine($"  - {file.FilePath}");
+        }
+
+        var outputTree = outputCompilation.SyntaxTrees
+            .SingleOrDefault(tree => tree.FilePath.EndsWith("Test.Node.MyNode_ScriptMethods.generated.cs"));
+
+        outputTree.Should().NotBeNull("Generator should produce output for class with dictionary methods");
+
+        string? output = outputTree?.ToString();
+
+        // Both dictionary types should be supported
+        output.Should().Contain("ProcessDictionary");
+        output.Should().Contain("ProcessTypedDictionary");
+        output.Should().Contain("global::Godot.Variant.Type.Dictionary");
+    }
+
+    [Fact]
+    public void SupportSpecialArrayTypes()
+    {
+        const string source = @"
+namespace Test.Node;
+
+using Godot;
+
+public partial class MyNode : Node
+{
+    public void ProcessNodePaths(NodePath[] paths) { }
+
+    public void ProcessStringNames(StringName[] names) { }
+
+    public void ProcessRids(Rid[] rids) { }
+}
+";
+        SyntaxTree syntaxTree = CSharpSyntaxTree.ParseText(source);
+        (Compilation? outputCompilation, var diagnostics) =
+            GeneratorTestUtil.RunGeneratorCompilation(new ScriptMethodsGenerator(), syntaxTree);
+        diagnostics.Should().BeEmpty();
+
+        string? output = outputCompilation.SyntaxTrees
+            .Single(tree => tree.FilePath.EndsWith("Test.Node.MyNode_ScriptMethods.generated.cs"))
+            ?.ToString();
+
+        // Special array types should map to generic Array
+        output.Should().Contain("ProcessNodePaths");
+        output.Should().Contain("ProcessStringNames");
+        output.Should().Contain("ProcessRids");
+        output.Should().Contain("global::Godot.Variant.Type.Array");
+    }
+
 }
