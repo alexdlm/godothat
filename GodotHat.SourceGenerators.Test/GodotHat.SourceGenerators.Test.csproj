@@ -5,8 +5,8 @@
     <PropertyGroup>
         <OutputType>Exe</OutputType>
         <EnablePreviewFeatures>True</EnablePreviewFeatures>
-        <TargetFrameworks>net8.0</TargetFrameworks>
-        <LangVersion>12</LangVersion>
+        <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
+        <LangVersion>14</LangVersion>
     </PropertyGroup>
 
     <ItemGroup>
