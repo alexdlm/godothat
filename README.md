@@ -166,7 +166,25 @@ public override void _ExitTree()
 
 ## Using godothat
 
-Requires Godot 4 with C# (GodotSharp) and the .NET 8 SDK or newer. Tested against Godot 4.7.2.
+### Compatibility
+
+The source generators (`GodotHat.SourceGenerators`, and the `GodotHat.Attributes` they use) have no package
+dependency on Godot, so they don't tie your project to a specific Godot version. Instead, the code they generate is
+compiled into your project against whichever GodotSharp you use. That code uses GodotSharp's script bridge APIs (the
+same ones Godot's own source generators use), so it needs a compatible Godot:
+
+- **Godot 4.4 or newer** with C# (GodotSharp). The test suite passes against GodotSharp 4.3 through 4.8-dev, and
+  is primarily developed against 4.7.2.
+- Godot 4.3 also works, but its projects default to `net6.0`, so raise your project's `TargetFramework` to `net8.0`
+  or newer.
+- Godot 4.0 - 4.2 are not supported.
+- Your project must target .NET 8 or newer.
+- The new GDExtension based Godot .NET bindings (`EnableGodotDotNetPreview`) are not supported yet.
+
+Future Godot 4.x versions will most likely work, as these bridge APIs have been stable across 4.x, but they are not
+guaranteed to be; if a new Godot release breaks the generated code, please open an issue.
+
+### Setup
 
 1. Add the following property to your project's .csproj to disable Godot's standard ScriptMethods generator:
 ```
@@ -178,8 +196,6 @@ replaces it for the whole project.
 
 2. Add the `GodotHat.Attributes` and `GodotHat.SourceGenerators` nupkg deps to your project.
 3. Mark your node classes (and any classes they are nested in) `partial`, add annotations and enjoy.
-
-The new GDExtension based Godot .NET bindings (`EnableGodotDotNetPreview`) are not supported yet.
 
 ## Acknowledgements
 

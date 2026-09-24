@@ -5,11 +5,13 @@
     <PropertyGroup>
         <OutputType>Exe</OutputType>
         <TargetFramework>net10.0</TargetFramework>
+        <!-- Overridden in CI to test compatibility with other Godot versions, eg -p:GodotSharpVersion=4.3.0 -->
+        <GodotSharpVersion Condition="'$(GodotSharpVersion)' == ''">4.7.2</GodotSharpVersion>
     </PropertyGroup>
 
     <ItemGroup>
         <PackageReference Include="AwesomeAssertions" Version="9.6.0" />
-        <PackageReference Include="GodotSharp" Version="4.7.2" />
+        <PackageReference Include="GodotSharp" Version="$(GodotSharpVersion)" />
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="5.9.0" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.10.1" />
         <PackageReference Include="Roslynator.Analyzers" Version="5.0.0">
