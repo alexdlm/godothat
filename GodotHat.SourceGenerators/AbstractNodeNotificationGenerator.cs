@@ -255,6 +255,12 @@ public abstract class AbstractNodeNotificationGenerator : IIncrementalGenerator
     }}";
         }
 
+        string classDeclaration = @$"{classSyntaxNode.Modifiers} class {classSymbol.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)}
+{{
+{functionImpl}{methodSources}
+}}
+";
+
         string code = @$"// Generated code via {this.GetType().FullName}
 namespace {classSymbol.ContainingNamespace};
 
@@ -266,14 +272,10 @@ using Godot;
 
 #nullable enable
 
-{classSyntaxNode.Modifiers} class {classSymbol.Name}
-{{
-{functionImpl}{methodSources}
-}}
-";
+{GeneratorUtil.WrapInContainingTypeDeclarations(classSymbol, classDeclaration)}";
 
         context.AddSource(
-            $"{classSymbol.ContainingNamespace}.{classSymbol.Name}_{this.AttributeShortName}.generated.cs",
+            $"{GeneratorUtil.GetUniqueHintName(classSymbol)}_{this.AttributeShortName}.generated.cs",
             code);
     }
 

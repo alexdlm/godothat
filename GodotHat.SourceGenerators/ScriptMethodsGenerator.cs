@@ -209,18 +209,17 @@ public class ScriptMethodsGenerator : IIncrementalGenerator
     private static string GodotArgumentToPropertyInfo(GodotSourceGeneratorsUtil.GodotArgument argument)
     {
         GodotSourceGeneratorsUtil.GodotType? type = argument.Type;
-        return $@"                new (
-                    type: global::Godot.Variant.Type.{type.VariantType},
-                    name: new global::Godot.StringName(""{argument.Name}""),
-                    hint: global::Godot.PropertyHint.None,
-                    hintString: """",
-                    usage: global::Godot.PropertyUsageFlags.Storage | global::Godot.PropertyUsageFlags.Editor,
-                    exported: false),
+        return $@"                    new (
+                        type: global::Godot.Variant.Type.{type.VariantType},
+                        name: new global::Godot.StringName(""{argument.Name}""),
+                        hint: global::Godot.PropertyHint.None,
+                        hintString: """",
+                        usage: global::Godot.PropertyUsageFlags.Storage | global::Godot.PropertyUsageFlags.Editor,
+                        exported: false),
 ";
     }
 
     private static string GodotMethodToBridgeMethodInfo(
-        INamedTypeSymbol classSymbol,
         GodotSourceGeneratorsUtil.GodotMethod method,
         string idx)
     {
@@ -229,22 +228,22 @@ public class ScriptMethodsGenerator : IIncrementalGenerator
             : null;
         string argumentsList = method.Arguments?.Any() ?? false
             ? @$"new() {{
-{arguments}        }}"
+{arguments}            }}"
             : "new() {}";
 
-        return @$"    private static readonly global::Godot.Bridge.MethodInfo {method.Name}{idx} = new(
-        name: {classSymbol.Name}.MethodName.{method.Name},
-        returnVal: new(
-            type: global::Godot.Variant.Type.{method.ReturnType?.VariantType ?? GodotVariantType.Nil},
-            name: new global::Godot.StringName(),
-            hint: global::Godot.PropertyHint.None,
-            hintString: """",
-            usage: global::Godot.PropertyUsageFlags.Storage | global::Godot.PropertyUsageFlags.Editor,
-            exported: false),
-        flags: global::Godot.MethodFlags.Normal,
-        arguments: {argumentsList},
-        defaultArguments: null
-    );
+        return @$"        public static readonly global::Godot.Bridge.MethodInfo {method.Name}{idx} = new(
+            name: MethodName.{method.Name},
+            returnVal: new(
+                type: global::Godot.Variant.Type.{method.ReturnType?.VariantType ?? GodotVariantType.Nil},
+                name: new global::Godot.StringName(),
+                hint: global::Godot.PropertyHint.None,
+                hintString: """",
+                usage: global::Godot.PropertyUsageFlags.Storage | global::Godot.PropertyUsageFlags.Editor,
+                exported: false),
+            flags: global::Godot.MethodFlags.Normal,
+            arguments: {argumentsList},
+            defaultArguments: null
+        );
 
 ";
     }
@@ -259,12 +258,17 @@ public class ScriptMethodsGenerator : IIncrementalGenerator
                     (arg, index) =>
                         $@"
                 // {arg.Name}
-                global::Godot.NativeInterop.VariantUtils.ConvertTo<{arg.Type.GlobalOrVariantType}>(args[{index}])"));
+                {arg.Type.ConvertFromVariant($"args[{index}]")}"));
+
+        string invokeAndReturn = method.ReturnType is null or { IsVoid: true }
+            ? $@"            {method.Name}({args});
+            ret = default;"
+            : $@"            var callRet = {method.Name}({args});
+            ret = {method.ReturnType.CreateVariant("callRet")};";
 
         return $@"        if (method == MethodName.{method.Name} && args.Count == {method.Arguments?.Count ?? 0})
         {{
-            {method.Name}({args});
-            ret = default;
+{invokeAndReturn}
             return true;
         }}
 ";
@@ -310,10 +314,10 @@ public class ScriptMethodsGenerator : IIncrementalGenerator
             .ToList();
 
         string methodInfoConstants =
-            string.Concat(orderedMethods.Select(m => GodotMethodToBridgeMethodInfo(classSymbol, m.method, m.idx)));
+            string.Concat(orderedMethods.Select(m => GodotMethodToBridgeMethodInfo(m.method, m.idx)));
 
         string methodInfoListAdds = string.Concat(
-            orderedMethods.Select(m => $"        MethodInfos.{m.method.Name}{m.idx},{lf}"));
+            orderedMethods.Select(m => $"            GodotHatMethodInfos.{m.method.Name}{m.idx},{lf}"));
 
         string methodInvokes = string.Concat(
             orderedMethods
@@ -322,34 +326,24 @@ public class ScriptMethodsGenerator : IIncrementalGenerator
         string methodHasCases = string.Concat(
             orderedMethods.Select(m => $"        if (method == MethodName.{m.method.Name}) return true;{lf}"));
 
-        string code = @$"// Generated code via {this.GetType().FullName}
-namespace {classSymbol.ContainingNamespace};
-
-using System;
-using System.Collections.Generic;
-using System.Collections.Immutable;
-using Godot.NativeInterop;
-using Godot;
-
-#nullable enable
-
-file static class MethodInfos {{
-{methodInfoConstants}
-    public static readonly global::System.Collections.Generic.List<global::Godot.Bridge.MethodInfo> GodotMethodList = new() {{
-{methodInfoListAdds}}};
-}}
-
-{classSyntaxNode.Modifiers} class {classSymbol.Name}
+        string classDeclaration = @$"{classSyntaxNode.Modifiers} class {classSymbol.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)}
 {{
+    private static class GodotHatMethodInfos
+    {{
+{methodInfoConstants}
+        public static readonly global::System.Collections.Generic.List<global::Godot.Bridge.MethodInfo> GodotMethodList = new() {{
+{methodInfoListAdds}        }};
+    }}
+
     #pragma warning disable CS0109 // Disable warning about redundant 'new' keyword
-    public new class MethodName : {godotBaseClass.ToDisplayString(NullableFlowState.None, SymbolDisplayFormat.FullyQualifiedFormat)}.MethodName
+    public new class MethodName : {classSymbol.BaseType!.ToDisplayString(NullableFlowState.None, SymbolDisplayFormat.FullyQualifiedFormat)}.MethodName
     {{
 {methodNameMembers}
     }}
 
     internal new static global::System.Collections.Generic.List<global::Godot.Bridge.MethodInfo> GetGodotMethodList()
     {{
-        return MethodInfos.GodotMethodList;
+        return GodotHatMethodInfos.GodotMethodList;
     }}
     #pragma warning restore CS0109
 
@@ -367,8 +361,21 @@ file static class MethodInfos {{
 }}
 ";
 
+        string code = @$"// Generated code via {this.GetType().FullName}
+namespace {classSymbol.ContainingNamespace};
+
+using System;
+using System.Collections.Generic;
+using System.Collections.Immutable;
+using Godot.NativeInterop;
+using Godot;
+
+#nullable enable
+
+{GeneratorUtil.WrapInContainingTypeDeclarations(classSymbol, classDeclaration)}";
+
         context.AddSource(
-            $"{classSymbol.ContainingNamespace}.{classSymbol.Name}_ScriptMethods.generated.cs",
+            $"{GeneratorUtil.GetUniqueHintName(classSymbol)}_ScriptMethods.generated.cs",
             code);
     }
 

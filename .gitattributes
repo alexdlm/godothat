@@ -1,13 +1,5 @@
-# Set the default behavior, in case people don't have core.autocrlf set.
-* text=lf
-
-# Explicitly declare text files you want to always be normalized and converted
-# to native line endings on checkout.
-*.cpp text
-*.c text
-*.h text
-*.gd text
-*.cs text
+# Normalize text files to LF in the repository and on checkout, regardless of core.autocrlf.
+* text=auto eol=lf
 
 # Declare files that will always have CRLF line endings on checkout.
 *.sln text eol=crlf

@@ -13,21 +13,16 @@
 
         <!-- Don't pack snupkg, but regular package is fair game -->
         <IsPackable Condition="'$(IncludeSymbols)' == 'true'">false</IsPackable>
-        <LangVersion>12</LangVersion>
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="JetBrains.Annotations" Version="2023.3.0" PrivateAssets="all" />
-        <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.10.0" PrivateAssets="all" />
-        <PackageReference Include="Microsoft.Net.Compilers.Toolset" Version="4.10.0">
+        <!-- Must not exceed the Roslyn version of the oldest supported compiler, see the analyzers/dotnet/roslyn4.0 pack path -->
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.0.1" PrivateAssets="all" />
+        <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="5.9.0" PrivateAssets="all" />
+        <PackageReference Include="Roslynator.Analyzers" Version="5.0.0">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="Roslynator.Analyzers" Version="4.12.4">
-            <PrivateAssets>all</PrivateAssets>
-            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-        </PackageReference>
-        <PackageReference Update="Microsoft.SourceLink.GitHub" Version="8.0.0" />
     </ItemGroup>
 
     <ItemGroup>

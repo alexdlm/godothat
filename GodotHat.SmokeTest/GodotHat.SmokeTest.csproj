@@ -1,0 +1,26 @@
+<Project Sdk="Godot.NET.Sdk">
+
+    <!--
+        Builds a Godot project against the packed GodotHat nupkgs, to check the generators load and produce compiling
+        code with the .NET SDK (and so Roslyn) version in use. The Godot.NET.Sdk version is set in global.json.
+        Not part of GodotHat.sln, see the Smoke job in dotnet.yml.
+
+        dotnet pack -o nupkgs && dotnet build GodotHat.SmokeTest
+    -->
+
+    <PropertyGroup>
+        <!-- Restore ignores a TargetFramework passed with -p, so CI sets this instead -->
+        <SmokeTargetFramework Condition="'$(SmokeTargetFramework)' == ''">net8.0</SmokeTargetFramework>
+        <TargetFramework>$(SmokeTargetFramework)</TargetFramework>
+        <Nullable>enable</Nullable>
+        <EnableDynamicLoading>true</EnableDynamicLoading>
+        <GodotDisabledSourceGenerators>ScriptMethods</GodotDisabledSourceGenerators>
+        <!-- A generator that fails to load only raises warning CS8032 -->
+        <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="GodotHat.Attributes" Version="0.0.0-local" />
+        <PackageReference Include="GodotHat.SourceGenerators" Version="0.0.0-local" />
+    </ItemGroup>
+</Project>

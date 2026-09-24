@@ -10,7 +10,7 @@ internal static class GeneratorUtil
             typeQualificationStyle: SymbolDisplayTypeQualificationStyle.NameAndContainingTypesAndNamespaces,
             genericsOptions: SymbolDisplayGenericsOptions.IncludeTypeParameters,
             parameterOptions:
-            SymbolDisplayParameterOptions.IncludeModifiers |
+            SymbolDisplayParameterOptions.IncludeParamsRefOut |
             SymbolDisplayParameterOptions.IncludeExtensionThis |
             SymbolDisplayParameterOptions.IncludeType |
             SymbolDisplayParameterOptions.IncludeName |
@@ -61,6 +61,36 @@ internal static class GeneratorUtil
             throw new InvalidOperationException($"Failed to resolve {typeName}, is it in a referenced assembly?");
         }
         return typeSymbol;
+    }
+
+    // AddSource() hint names don't support angle brackets
+    public static string GetUniqueHintName(INamedTypeSymbol typeSymbol) =>
+        typeSymbol.ToDisplayString(
+                SymbolDisplayFormat.FullyQualifiedFormat.WithGlobalNamespaceStyle(
+                    SymbolDisplayGlobalNamespaceStyle.Omitted))
+            .Replace("<", "(Of ")
+            .Replace(">", ")");
+
+    public static string WrapInContainingTypeDeclarations(INamedTypeSymbol typeSymbol, string typeDeclaration)
+    {
+        string result = typeDeclaration;
+        for (INamedTypeSymbol? containing = typeSymbol.ContainingType;
+             containing is not null;
+             containing = containing.ContainingType)
+        {
+            string keyword = containing switch
+            {
+                { TypeKind: TypeKind.Struct, IsRecord: true } => "record struct",
+                { TypeKind: TypeKind.Struct } => "struct",
+                { TypeKind: TypeKind.Interface } => "interface",
+                { IsRecord: true } => "record",
+                _ => "class",
+            };
+            result =
+                $"partial {keyword} {containing.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)}\n{{\n{result}}}\n";
+        }
+
+        return result;
     }
 
     public static bool TypeIsOneOf(

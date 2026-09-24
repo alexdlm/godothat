@@ -21,15 +21,14 @@ jobs:
       run_id: "${{github.run_id}}"
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0 # We need tags and commits since the last tag for versioning
       - name: Setup .NET
-        uses: actions/setup-dotnet@v3
+        uses: actions/setup-dotnet@v4
         with:
           dotnet-version: |
-            7.0.x
-            8.0.x
+            10.0.x
 
       - name: Get latest git tag
         id: git_tag
@@ -64,7 +63,7 @@ jobs:
       - name: Build
         run: dotnet build --no-restore -p:VersionPrefix="${{env.version_prefix}}" -p:VersionSuffix="${{env.version_suffix}}"
       #    - name: Upload a Build Artifact
-      #      uses: actions/upload-artifact@v3.1.2
+      #      uses: actions/upload-artifact@v4
       #      with:
       #        if-no-files-found: warn
       #        name: build
@@ -74,7 +73,7 @@ jobs:
         run: dotnet test --no-build --verbosity normal -p:VersionPrefix="${{env.version_prefix}}" -p:VersionSuffix="${{env.version_suffix}}" --logger "trx;LogFileName=test-results.trx"
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v3.1.2
+        uses: actions/upload-artifact@v4
         with:
           name: test-results
           path: "**/test-results.trx"
@@ -84,8 +83,90 @@ jobs:
       - name: Pack Symbols
         run: dotnet pack --no-build -c Debug -p:IncludeSymbols=true -p:SymbolPackageFormat=snupkg -p:VersionPrefix="${{env.version_prefix}}" -p:VersionSuffix="${{env.version_suffix}}" --output nupkgs
       - name: Upload nupkgs
-        uses: actions/upload-artifact@v3.1.2
+        uses: actions/upload-artifact@v4
         with:
           if-no-files-found: error
           name: "nupkgs-${{env.package_suffix}}"
           path: nupkgs
+
+  # Checks the generated code against other GodotSharp versions than the one pinned in the test project.
+  Compatibility:
+    name: "Compatibility (GodotSharp ${{ matrix.godot }})"
+    runs-on: ubuntu-latest
+    continue-on-error: ${{ matrix.experimental }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Oldest supported version, see README
+          - godot: "4.3.0"
+            experimental: false
+          # Latest stable 4.x
+          - godot: "4.*"
+            experimental: false
+          # Latest 4.x, including dev/beta/rc builds, to catch upcoming breaking changes early
+          - godot: "4.*-*"
+            experimental: true
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            10.0.x
+      - name: Test
+        run: dotnet test -p:GodotSharpVersion="${{ matrix.godot }}" --verbosity normal
+      - name: Report resolved GodotSharp version
+        if: always()
+        # `dotnet list package` ignores the -p override, so read what restore actually resolved
+        run: grep -oE '"GodotSharp/[^"]+"' GodotHat.SourceGenerators.Test/obj/project.assets.json | head -1
+
+  # Builds a Godot project against the packed nupkgs with each supported .NET SDK and Godot version, to check the
+  # generators load in that SDK's compiler and work alongside that Godot's own source generators. The unit tests can't
+  # cover this as they use the Roslyn version referenced by the test project.
+  Smoke:
+    name: "Smoke (.NET ${{ matrix.dotnet }} SDK, Godot ${{ matrix.godot }})"
+    runs-on: ubuntu-latest
+    # Latest may pick up a Godot dev/beta/rc build, which shouldn't block PRs
+    continue-on-error: ${{ matrix.godot == 'latest' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # 8.0 and 4.3.0 are the oldest supported, see README. Stable is the newest 4.x Godot.NET.Sdk release, latest
+        # also includes dev/beta/rc builds.
+        dotnet: ["8.0", "9.0", "10.0"]
+        godot: ["4.3.0", "4.7.2", "stable", "latest"]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          # 10.0 is needed to build GodotHat itself
+          dotnet-version: |
+            ${{ matrix.dotnet }}.x
+            10.0.x
+      - name: Pack
+        run: dotnet pack --output nupkgs
+      - name: Pin smoke test SDKs
+        working-directory: GodotHat.SmokeTest
+        env:
+          DOTNET_SDK: ${{ matrix.dotnet }}
+          GODOT_SDK: ${{ matrix.godot }}
+        run: |
+          # msbuild-sdks doesn't support floating versions, so resolve "stable"/"latest" from nuget. Prerelease
+          # versions are the ones with a "-" suffix, eg 4.8.0-dev.6.
+          case "$GODOT_SDK" in
+            stable) FILTER='[.versions[] | select(startswith("4.") and (contains("-") | not))] | last' ;;
+            latest) FILTER='[.versions[] | select(startswith("4."))] | last' ;;
+          esac
+          if [ -n "${FILTER:-}" ]; then
+            GODOT_SDK=$(curl -sf https://api.nuget.org/v3-flatcontainer/godot.net.sdk/index.json | jq -r "$FILTER")
+          fi
+          jq -n --arg dotnet "$DOTNET_SDK.100" --arg godot "$GODOT_SDK" \
+            '{sdk: {version: $dotnet, rollForward: "latestFeature"}, "msbuild-sdks": {"Godot.NET.Sdk": $godot}}' \
+            > global.json
+          cat global.json
+          dotnet --version
+      - name: Build smoke test
+        working-directory: GodotHat.SmokeTest
+        run: dotnet build -p:SmokeTargetFramework=net${{ matrix.dotnet }}
