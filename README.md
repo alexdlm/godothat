@@ -99,7 +99,7 @@ For example
 private IDisposable Foo(Foo foo) {
   this.foo = foo;
   foo.Add(this);
-  return Disposable.create(() => {
+  return Disposable.Create(() => {
     foo.Remove(this);
     this.foo = null;
   });
@@ -111,13 +111,24 @@ private void DisposeFoo();
 ```
 
 Accessibility of the `Update` method can be controlled with the `accessibility` argument, eg
-`[AutoDispose(Accessibility = Accessibility.Private)]`.
+`[AutoDispose(Accessibility.Private)]`.
 
 DisposeFoo will be called on tree exit.
 
+### GodotIgnore
+
+GodotHat replaces Godot's `ScriptMethods` source generator (see [Using godothat](#using-godothat)), which exposes
+methods with Variant-compatible parameters and return values to Godot so they can be called from the engine, GDScript,
+`Call()`, etc. Use `[GodotIgnore]` to keep a method from being exposed.
+
+```csharp
+[GodotIgnore]
+public void NotCallableFromGodot() { }
+```
+
 ## Other notes
 
-Ordering of calls is by occurence within the source file, and in reverse on dispose (if applicable).
+Ordering of calls is by occurrence within the source file, and in reverse on dispose (if applicable).
 This means you likely want `[SceneUniqueName]` fields and properties before any `[OnEnterTree]` methods
 that depend on them.
 
@@ -132,39 +143,46 @@ IDisposable FirstMethod() { /* ... */ }
 IDisposable? SecondMethod() { /* ... */ }
 
 [OnEnterTree]
-IDisposable? ThirdMethod() { /* ... */ }
+void ThirdMethod() { /* ... */ }
 
 // Generated _EnterTree is conceptually:
 public override void _EnterTree()
 {
-  MyNodePopulatedFirst = GetNode("%MyNode");
-  _disposable_FirstMethod = FirstMethod();
-  SecondMethod();
-  _disposable_ThirdMethod = ThirdMethod();
+  MyNodePopulatedFirst = GetNode<Node>("%MyNode");
+  __disposable_FirstMethod = FirstMethod();
+  __disposable_SecondMethod = SecondMethod();
+  ThirdMethod();
 }
 
 // Generated _ExitTree is conceptually:
 public override void _ExitTree()
 {
-  _disposable_ThirdMethod?.Dispose();
-  _disposable_ThirdMethod = null;
-  _disposable_FirstMethod.Dispose();
-  _disposable_FirstMethod = null;
+  __disposable_SecondMethod?.Dispose();
+  __disposable_SecondMethod = null;
+  __disposable_FirstMethod?.Dispose();
+  __disposable_FirstMethod = null;
 }
 ```
 
 ## Using godothat
 
+Requires Godot 4 with C# (GodotSharp) and the .NET 8 SDK or newer. Tested against Godot 4.7.2.
+
 1. Add the following property to your project's .csproj to disable Godot's standard ScriptMethods generator:
 ```
 <GodotDisabledSourceGenerators>ScriptMethods</GodotDisabledSourceGenerators>
 ```
+This is needed because source generators can't see each other's output, so Godot's generator would not register the
+`_Ready`, `_EnterTree` and `_ExitTree` overrides that godothat generates. godothat's own ScriptMethods generator
+replaces it for the whole project.
 
-2. Add the godohat nupkg dep to your project.
-3. Add annotations and enjoy
+2. Add the `GodotHat.Attributes` and `GodotHat.SourceGenerators` nupkg deps to your project.
+3. Mark your node classes (and any classes they are nested in) `partial`, add annotations and enjoy.
+
+The new GDExtension based Godot .NET bindings (`EnableGodotDotNetPreview`) are not supported yet.
 
 ## Acknowledgements
 
 ### Godot Code / Inspiration
 
-ScriptMethodsGenerator is a reimplementation godot's ScriptMethodsGenerator to produce similar output.
+ScriptMethodsGenerator is a reimplementation of godot's ScriptMethodsGenerator to produce similar output.

@@ -1,4 +1,4 @@
-using FluentAssertions;
+using AwesomeAssertions;
 using Godot;
 
 namespace GodotHat.SourceGenerators.Test;

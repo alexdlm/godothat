@@ -10,7 +10,7 @@ internal static class GeneratorUtil
             typeQualificationStyle: SymbolDisplayTypeQualificationStyle.NameAndContainingTypesAndNamespaces,
             genericsOptions: SymbolDisplayGenericsOptions.IncludeTypeParameters,
             parameterOptions:
-            SymbolDisplayParameterOptions.IncludeModifiers |
+            SymbolDisplayParameterOptions.IncludeParamsRefOut |
             SymbolDisplayParameterOptions.IncludeExtensionThis |
             SymbolDisplayParameterOptions.IncludeType |
             SymbolDisplayParameterOptions.IncludeName |
