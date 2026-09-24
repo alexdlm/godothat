@@ -11,6 +11,7 @@ public partial class OnExitTreeGenerator : AbstractNodeNotificationGenerator
     protected override string OverrideEventFunctionName => "_ExitTree";
 
     protected override bool AllowDisposableReturns => false;
+    protected override bool CallBaseFirst => false;
 
     protected override ClassToProcess? GetNode(GeneratorSyntaxContext context, CancellationToken cancellationToken)
     {

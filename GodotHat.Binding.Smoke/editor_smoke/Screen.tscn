@@ -1,0 +1,32 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://addons/godothat_binding/BindingRoot.cs" id="1_root"]
+[ext_resource type="Script" path="res://addons/godothat_binding/BindingDef.cs" id="2_def"]
+[ext_resource type="Script" path="res://ViewModels/FormSample.cs" id="3_sample"]
+
+[sub_resource type="Resource" id="Sample"]
+script = ExtResource("3_sample")
+Name = "From sample data"
+
+[sub_resource type="Resource" id="Binding_broken"]
+script = ExtResource("2_def")
+Path = "Missing"
+
+[node name="Screen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource("1_root")
+ViewModelType = "GodotHat.Binding.Smoke.ViewModels.FormViewModel"
+SampleData = SubResource("Sample")
+
+[node name="Title" type="Label" parent="."]
+layout_mode = 0
+text = "Scene value"
+
+[node name="Broken" type="Label" parent="."]
+layout_mode = 0
+metadata/godothat_bindings = {
+&"text": SubResource("Binding_broken")
+}

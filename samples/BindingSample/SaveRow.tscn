@@ -1,0 +1,12 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://addons/godothat_binding/BindingDef.cs" id="1_def"]
+
+[sub_resource type="Resource" id="Binding_title"]
+script = ExtResource("1_def")
+Path = "Title"
+
+[node name="SaveRow" type="Label"]
+metadata/godothat_bindings = {
+&"text": SubResource("Binding_title")
+}

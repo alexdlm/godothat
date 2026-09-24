@@ -170,3 +170,75 @@ jobs:
       - name: Build smoke test
         working-directory: GodotHat.SmokeTest
         run: dotnet build -p:SmokeTargetFramework=net${{ matrix.dotnet }}
+
+  # Runs GodotHat.Binding's engine tests inside Godot (headless) with GdUnit4, against the packed nupkgs.
+  BindingEngine:
+    name: "Binding engine tests (Godot ${{ matrix.godot }})"
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        godot: ["4.7.2"]
+    env:
+      GODOT_DIR: ${{ github.workspace }}/../godot
+      GODOT_BIN: ${{ github.workspace }}/../godot/Godot_v${{ matrix.godot }}-stable_mono_linux_x86_64/Godot_v${{ matrix.godot }}-stable_mono_linux.x86_64
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.0.x
+            10.0.x
+      - name: Cache Godot
+        id: godot-cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.GODOT_DIR }}
+          key: godot-${{ matrix.godot }}-stable-mono-linux-x86_64
+      - name: Download Godot
+        if: steps.godot-cache.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p "$GODOT_DIR"
+          curl -fsSL -o "$GODOT_DIR/godot.zip" "https://github.com/godotengine/godot-builds/releases/download/${{ matrix.godot }}-stable/Godot_v${{ matrix.godot }}-stable_mono_linux_x86_64.zip"
+          unzip -q "$GODOT_DIR/godot.zip" -d "$GODOT_DIR"
+          rm "$GODOT_DIR/godot.zip"
+      - name: Godot version
+        run: '"$GODOT_BIN" --version'
+      - name: Pack
+        run: dotnet pack --output nupkgs
+      - name: Engine tests
+        working-directory: GodotHat.Binding.Smoke
+        # GdUnit4 builds the project, imports it in the editor, then runs the tests in Godot, see .runsettings
+        run: dotnet test --logger "trx;LogFileName=test-results.trx"
+      - name: Editor smoke test
+        working-directory: GodotHat.Binding.Smoke
+        # Drives the inspector, dock and preview in a headless editor, see editor_smoke/editor_smoke.gd
+        env:
+          GODOTHAT_EDITOR_SMOKE: "1"
+        run: '"$GODOT_BIN" --headless -e --path .'
+      - name: Build sample
+        working-directory: samples/BindingSample
+        run: dotnet build
+      - name: Validate sample bindings
+        working-directory: samples/BindingSample
+        # Import first so resources and script UIDs are known, then check every binding as users would in their CI
+        run: |
+          "$GODOT_BIN" --headless --path . --import
+          "$GODOT_BIN" --headless --path . --script res://addons/godothat_binding/ValidateBindings.cs
+      - name: Sample tests
+        working-directory: samples/BindingSample
+        # The sample's own tests, which use GodotHat.Binding.Testing
+        run: dotnet test --logger "trx;LogFileName=test-results.trx"
+      - name: Sample view model tests
+        working-directory: samples/BindingSample.ViewModels.Test
+        run: dotnet test --logger "trx;LogFileName=test-results.trx"
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: binding-engine-test-results-${{ matrix.godot }}
+          path: |
+            GodotHat.Binding.Smoke/**/test-results.trx
+            samples/**/test-results.trx

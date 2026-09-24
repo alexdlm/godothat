@@ -90,6 +90,7 @@ public partial class MyNode
 {
     public override void _EnterTree()
     {
+        base._EnterTree();
         // Generated code, to add other calls add [OnEnterTree] attributes to methods
 
         __InitFromScene_TheCamera();

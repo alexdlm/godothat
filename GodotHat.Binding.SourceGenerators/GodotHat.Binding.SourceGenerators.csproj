@@ -1,0 +1,41 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <Import Project="..\Common.props" />
+
+    <PropertyGroup>
+        <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+        <IncludeBuildOutput>false</IncludeBuildOutput>
+        <!-- Packed into GodotHat.Binding.Core, so view model assemblies without Godot get their accessors -->
+        <IsPackable>false</IsPackable>
+        <IsRoslynComponent>true</IsRoslynComponent>
+        <Nullable>enable</Nullable>
+        <TargetFramework>netstandard2.0</TargetFramework>
+        <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <!-- ForAttributeWithMetadataName needs Roslyn 4.3; 4.8 is the .NET 8 SDK, the oldest supported by GodotHat.Binding -->
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.8.0" PrivateAssets="all" />
+        <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="5.9.0" PrivateAssets="all" />
+        <PackageReference Include="Roslynator.Analyzers" Version="5.0.0">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+    </ItemGroup>
+
+    <ItemGroup>
+        <InternalsVisibleTo Include="GodotHat.Binding.SourceGenerators.Test" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <AdditionalFiles Include="AnalyzerReleases.Shipped.md" />
+        <AdditionalFiles Include="AnalyzerReleases.Unshipped.md" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <!-- Shared with GodotHat.SourceGenerators, to decide which types convert to a Godot Variant -->
+        <Compile Include="..\GodotHat.SourceGenerators\GeneratorUtil.cs" Link="Shared\GeneratorUtil.cs" />
+        <Compile Include="..\GodotHat.SourceGenerators\GodotSourceGeneratorsUtil.cs" Link="Shared\GodotSourceGeneratorsUtil.cs" />
+        <Compile Include="..\GodotHat.SourceGenerators\GodotVariantType.cs" Link="Shared\GodotVariantType.cs" />
+    </ItemGroup>
+</Project>

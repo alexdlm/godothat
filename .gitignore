@@ -7,3 +7,5 @@ riderModule.iml
 *.user
 .godot/
 /nupkgs/
+*.received.*
+samples/.packages/

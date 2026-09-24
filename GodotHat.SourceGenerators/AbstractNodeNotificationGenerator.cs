@@ -12,6 +12,10 @@ public abstract class AbstractNodeNotificationGenerator : IIncrementalGenerator
     protected abstract string OverrideEventFunctionName { get; }
     protected abstract bool AllowDisposableReturns { get; }
 
+    // Base implementations run before ours on the way in, and after ours on the way out, so a base class's setup is
+    // available to (and outlives) a derived class's.
+    protected virtual bool CallBaseFirst => true;
+
     public virtual void Initialize(IncrementalGeneratorInitializationContext context)
     {
         IncrementalValueProvider<ImmutableArray<ClassToProcess>> nodeTypes = context.SyntaxProvider
@@ -211,13 +215,16 @@ public abstract class AbstractNodeNotificationGenerator : IIncrementalGenerator
             classToProcess.MethodSources
                 .SelectMany(source => $"\n\n    {source}"));
 
+        string baseCall = $"\n        base.{this.OverrideEventFunctionName}();";
+        string baseBefore = this.CallBaseFirst ? baseCall : "";
+        string baseAfter = this.CallBaseFirst ? "" : baseCall;
+
         string functionImpl;
 
         if (classToProcess.IsTool)
         {
             functionImpl = $@"    public override void {this.OverrideEventFunctionName}()
-    {{
-        base.{this.OverrideEventFunctionName}();
+    {{{baseBefore}
 #if TOOLS
         if (Godot.Engine.IsEditorHint())
         {{
@@ -236,7 +243,7 @@ public abstract class AbstractNodeNotificationGenerator : IIncrementalGenerator
             _{this.OverrideEventFunctionName}Internal();
 #if TOOLS
         }}
-#endif //TOOLS
+#endif //TOOLS{baseAfter}
     }}
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -249,9 +256,9 @@ public abstract class AbstractNodeNotificationGenerator : IIncrementalGenerator
         else
         {
             functionImpl = $@"    public override void {this.OverrideEventFunctionName}()
-    {{
+    {{{baseBefore}
         // Generated code, to add other calls add [{this.AttributeShortName}] attributes to methods
-{calls}
+{calls}{baseAfter}
     }}";
         }
 

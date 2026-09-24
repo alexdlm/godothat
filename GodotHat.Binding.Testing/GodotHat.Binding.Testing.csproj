@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <Import Project="..\Common.props" />
+
+    <PropertyGroup>
+        <Description>Test support for GodotHat.Binding: mount bound scenes with the view models you give them, drive their Controls through real input, and check every binding in a project.</Description>
+        <TargetFramework>net8.0</TargetFramework>
+        <RootNamespace>GodotHat.Binding.Testing</RootNamespace>
+        <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <PackageTags>$(PackageTags) mvvm binding r3 testing</PackageTags>
+        <BindingGodotSharpVersion Condition="'$(BindingGodotSharpVersion)' == ''">4.4.0</BindingGodotSharpVersion>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="GodotSharp" Version="$(BindingGodotSharpVersion)" />
+        <PackageReference Include="Roslynator.Analyzers" Version="5.0.0">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\GodotHat.Binding\GodotHat.Binding.csproj" />
+    </ItemGroup>
+</Project>

@@ -6,6 +6,18 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GodotHat.SourceGenerators",
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GodotHat.SourceGenerators.Test", "GodotHat.SourceGenerators.Test\GodotHat.SourceGenerators.Test.csproj", "{1956D1BC-FB32-4B3C-925F-47939D05AD5B}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GodotHat.Binding.Core", "GodotHat.Binding.Core\GodotHat.Binding.Core.csproj", "{C2884EBC-AEFC-5CD4-83AD-E9E838BB207B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GodotHat.Binding.Core.Test", "GodotHat.Binding.Core.Test\GodotHat.Binding.Core.Test.csproj", "{15F22FC0-4E09-584B-AD91-70E54C7B175E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GodotHat.Binding.SourceGenerators", "GodotHat.Binding.SourceGenerators\GodotHat.Binding.SourceGenerators.csproj", "{2DF99C12-E517-5B34-89E4-8D0A1FAC63B7}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GodotHat.Binding.SourceGenerators.Test", "GodotHat.Binding.SourceGenerators.Test\GodotHat.Binding.SourceGenerators.Test.csproj", "{90CC149A-3706-5B70-94CE-55D58E20214C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GodotHat.Binding", "GodotHat.Binding\GodotHat.Binding.csproj", "{40CBA11F-73D4-53CD-AD67-6C7B5C949D73}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GodotHat.Binding.Testing", "GodotHat.Binding.Testing\GodotHat.Binding.Testing.csproj", "{3D6A2642-0171-5531-AC41-1D0646A47B91}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -24,5 +36,29 @@ Global
 		{1956D1BC-FB32-4B3C-925F-47939D05AD5B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1956D1BC-FB32-4B3C-925F-47939D05AD5B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1956D1BC-FB32-4B3C-925F-47939D05AD5B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C2884EBC-AEFC-5CD4-83AD-E9E838BB207B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C2884EBC-AEFC-5CD4-83AD-E9E838BB207B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C2884EBC-AEFC-5CD4-83AD-E9E838BB207B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C2884EBC-AEFC-5CD4-83AD-E9E838BB207B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{15F22FC0-4E09-584B-AD91-70E54C7B175E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{15F22FC0-4E09-584B-AD91-70E54C7B175E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{15F22FC0-4E09-584B-AD91-70E54C7B175E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{15F22FC0-4E09-584B-AD91-70E54C7B175E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2DF99C12-E517-5B34-89E4-8D0A1FAC63B7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2DF99C12-E517-5B34-89E4-8D0A1FAC63B7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2DF99C12-E517-5B34-89E4-8D0A1FAC63B7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2DF99C12-E517-5B34-89E4-8D0A1FAC63B7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{90CC149A-3706-5B70-94CE-55D58E20214C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{90CC149A-3706-5B70-94CE-55D58E20214C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{90CC149A-3706-5B70-94CE-55D58E20214C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{90CC149A-3706-5B70-94CE-55D58E20214C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{40CBA11F-73D4-53CD-AD67-6C7B5C949D73}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{40CBA11F-73D4-53CD-AD67-6C7B5C949D73}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{40CBA11F-73D4-53CD-AD67-6C7B5C949D73}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{40CBA11F-73D4-53CD-AD67-6C7B5C949D73}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3D6A2642-0171-5531-AC41-1D0646A47B91}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3D6A2642-0171-5531-AC41-1D0646A47B91}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3D6A2642-0171-5531-AC41-1D0646A47B91}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3D6A2642-0171-5531-AC41-1D0646A47B91}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

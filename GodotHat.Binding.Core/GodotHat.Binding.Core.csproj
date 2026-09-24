@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <Import Project="..\Common.props" />
+
+    <PropertyGroup>
+        <Description>Godot-free core of GodotHat.Binding: view model accessors, binding paths, converters and the binding engine, built on R3.</Description>
+        <TargetFramework>net8.0</TargetFramework>
+        <RootNamespace>GodotHat.Binding</RootNamespace>
+        <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <PackageTags>$(PackageTags) mvvm binding r3</PackageTags>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="ObservableCollections" Version="3.3.4" />
+        <PackageReference Include="R3" Version="1.3.1" />
+        <PackageReference Include="Roslynator.Analyzers" Version="5.0.0">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+    </ItemGroup>
+
+    <ItemGroup>
+        <InternalsVisibleTo Include="GodotHat.Binding.Core.Test" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <!-- The view model generator ships with the core, so view models can live in assemblies without Godot -->
+        <ProjectReference Include="..\GodotHat.Binding.SourceGenerators\GodotHat.Binding.SourceGenerators.csproj" ReferenceOutputAssembly="false" PrivateAssets="all" />
+        <None Include="..\GodotHat.Binding.SourceGenerators\bin\$(Configuration)\netstandard2.0\GodotHat.Binding.SourceGenerators.dll" Pack="true" PackagePath="analyzers/dotnet/roslyn4.8/cs" Visible="false" />
+    </ItemGroup>
+</Project>

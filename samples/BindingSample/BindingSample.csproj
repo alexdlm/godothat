@@ -1,0 +1,44 @@
+<Project Sdk="Godot.NET.Sdk/4.7.2">
+
+    <!--
+        Sample for GodotHat.Binding, using the packages built from this repo:
+
+        dotnet pack -o nupkgs
+        dotnet build samples/BindingSample
+        then open samples/BindingSample/project.godot in Godot 4.7
+
+        The view models are in ../BindingSample.ViewModels, without Godot. The tests in Tests/ run in Godot with GdUnit4
+        and GodotHat.Binding.Testing:
+
+        GODOT_BIN=/path/to/godot dotnet test samples/BindingSample
+    -->
+
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <EnableDynamicLoading>true</EnableDynamicLoading>
+        <RootNamespace>BindingSample</RootNamespace>
+        <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+        <!-- GdUnit4 runs the tests inside Godot, which needs every dependency next to the assembly -->
+        <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+        <!-- gdUnit4.test.adapter 3.1 requires the gdUnit4.api 5.1 prerelease -->
+        <NoWarn>$(NoWarn);NU5104</NoWarn>
+        <RunSettingsFilePath>$(MSBuildProjectDirectory)/.runsettings</RunSettingsFilePath>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="GodotHat.Binding" Version="0.0.0-local" />
+        <PackageReference Include="Jab" Version="0.12.0" PrivateAssets="all" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\BindingSample.ViewModels\BindingSample.ViewModels.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.10.1" />
+        <PackageReference Include="gdUnit4.api" Version="5.1.0-rc5" />
+        <PackageReference Include="gdUnit4.test.adapter" Version="3.1.1" />
+        <PackageReference Include="GodotHat.Binding.Testing" Version="0.0.0-local" />
+    </ItemGroup>
+</Project>
