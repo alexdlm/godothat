@@ -21,15 +21,14 @@ jobs:
       run_id: "${{github.run_id}}"
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0 # We need tags and commits since the last tag for versioning
       - name: Setup .NET
-        uses: actions/setup-dotnet@v3
+        uses: actions/setup-dotnet@v4
         with:
           dotnet-version: |
-            7.0.x
-            8.0.x
+            10.0.x
 
       - name: Get latest git tag
         id: git_tag
@@ -64,7 +63,7 @@ jobs:
       - name: Build
         run: dotnet build --no-restore -p:VersionPrefix="${{env.version_prefix}}" -p:VersionSuffix="${{env.version_suffix}}"
       #    - name: Upload a Build Artifact
-      #      uses: actions/upload-artifact@v3.1.2
+      #      uses: actions/upload-artifact@v4
       #      with:
       #        if-no-files-found: warn
       #        name: build
@@ -74,7 +73,7 @@ jobs:
         run: dotnet test --no-build --verbosity normal -p:VersionPrefix="${{env.version_prefix}}" -p:VersionSuffix="${{env.version_suffix}}" --logger "trx;LogFileName=test-results.trx"
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v3.1.2
+        uses: actions/upload-artifact@v4
         with:
           name: test-results
           path: "**/test-results.trx"
@@ -84,7 +83,7 @@ jobs:
       - name: Pack Symbols
         run: dotnet pack --no-build -c Debug -p:IncludeSymbols=true -p:SymbolPackageFormat=snupkg -p:VersionPrefix="${{env.version_prefix}}" -p:VersionSuffix="${{env.version_suffix}}" --output nupkgs
       - name: Upload nupkgs
-        uses: actions/upload-artifact@v3.1.2
+        uses: actions/upload-artifact@v4
         with:
           if-no-files-found: error
           name: "nupkgs-${{env.package_suffix}}"

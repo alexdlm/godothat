@@ -1,6 +1,6 @@
 namespace GodotHat.SourceGenerators;
 
-// TODO: Add a test that ensures these values aren't broken with godot upgrades
+// Mirrors Godot.Variant.Type, kept in sync by GodotVariantTypeTest.
 // Ideally we would just import the GodotSharp assembly as a reference, but it's not netstandard2.0 which is required
 // for generators.
 public enum GodotVariantType : long
@@ -43,5 +43,6 @@ public enum GodotVariantType : long
     PackedVector2Array = 35,
     PackedVector3Array = 36,
     PackedColorArray = 37,
-    Max = 38,
+    PackedVector4Array = 38,
+    Max = 39,
 }

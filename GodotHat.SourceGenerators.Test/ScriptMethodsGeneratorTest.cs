@@ -76,105 +76,106 @@ using Godot;
 
 #nullable enable
 
-file static class MethodInfos {
-    private static readonly global::Godot.Bridge.MethodInfo _ExitTree = new(
-        name: MyNode.MethodName._ExitTree,
-        returnVal: new(
-            type: global::Godot.Variant.Type.Nil,
-            name: new global::Godot.StringName(),
-            hint: global::Godot.PropertyHint.None,
-            hintString: """",
-            usage: global::Godot.PropertyUsageFlags.Storage | global::Godot.PropertyUsageFlags.Editor,
-            exported: false),
-        flags: global::Godot.MethodFlags.Normal,
-        arguments: new() {},
-        defaultArguments: null
-    );
-
-    private static readonly global::Godot.Bridge.MethodInfo _Ready = new(
-        name: MyNode.MethodName._Ready,
-        returnVal: new(
-            type: global::Godot.Variant.Type.Nil,
-            name: new global::Godot.StringName(),
-            hint: global::Godot.PropertyHint.None,
-            hintString: """",
-            usage: global::Godot.PropertyUsageFlags.Storage | global::Godot.PropertyUsageFlags.Editor,
-            exported: false),
-        flags: global::Godot.MethodFlags.Normal,
-        arguments: new() {},
-        defaultArguments: null
-    );
-
-    private static readonly global::Godot.Bridge.MethodInfo DoThing2 = new(
-        name: MyNode.MethodName.DoThing2,
-        returnVal: new(
-            type: global::Godot.Variant.Type.Nil,
-            name: new global::Godot.StringName(),
-            hint: global::Godot.PropertyHint.None,
-            hintString: """",
-            usage: global::Godot.PropertyUsageFlags.Storage | global::Godot.PropertyUsageFlags.Editor,
-            exported: false),
-        flags: global::Godot.MethodFlags.Normal,
-        arguments: new() {},
-        defaultArguments: null
-    );
-
-    private static readonly global::Godot.Bridge.MethodInfo DoThing3 = new(
-        name: MyNode.MethodName.DoThing3,
-        returnVal: new(
-            type: global::Godot.Variant.Type.Nil,
-            name: new global::Godot.StringName(),
-            hint: global::Godot.PropertyHint.None,
-            hintString: """",
-            usage: global::Godot.PropertyUsageFlags.Storage | global::Godot.PropertyUsageFlags.Editor,
-            exported: false),
-        flags: global::Godot.MethodFlags.Normal,
-        arguments: new() {
-                new (
-                    type: global::Godot.Variant.Type.String,
-                    name: new global::Godot.StringName(""arg""),
-                    hint: global::Godot.PropertyHint.None,
-                    hintString: """",
-                    usage: global::Godot.PropertyUsageFlags.Storage | global::Godot.PropertyUsageFlags.Editor,
-                    exported: false),
-        },
-        defaultArguments: null
-    );
-
-    private static readonly global::Godot.Bridge.MethodInfo DoThing4 = new(
-        name: MyNode.MethodName.DoThing4,
-        returnVal: new(
-            type: global::Godot.Variant.Type.Nil,
-            name: new global::Godot.StringName(),
-            hint: global::Godot.PropertyHint.None,
-            hintString: """",
-            usage: global::Godot.PropertyUsageFlags.Storage | global::Godot.PropertyUsageFlags.Editor,
-            exported: false),
-        flags: global::Godot.MethodFlags.Normal,
-        arguments: new() {
-                new (
-                    type: global::Godot.Variant.Type.PackedStringArray,
-                    name: new global::Godot.StringName(""args""),
-                    hint: global::Godot.PropertyHint.None,
-                    hintString: """",
-                    usage: global::Godot.PropertyUsageFlags.Storage | global::Godot.PropertyUsageFlags.Editor,
-                    exported: false),
-        },
-        defaultArguments: null
-    );
-
-
-    public static readonly global::System.Collections.Generic.List<global::Godot.Bridge.MethodInfo> GodotMethodList = new() {
-        MethodInfos._ExitTree,
-        MethodInfos._Ready,
-        MethodInfos.DoThing2,
-        MethodInfos.DoThing3,
-        MethodInfos.DoThing4,
-};
-}
-
 public partial class MyNode
 {
+    private static class GodotHatMethodInfos
+    {
+        public static readonly global::Godot.Bridge.MethodInfo _ExitTree = new(
+            name: MethodName._ExitTree,
+            returnVal: new(
+                type: global::Godot.Variant.Type.Nil,
+                name: new global::Godot.StringName(),
+                hint: global::Godot.PropertyHint.None,
+                hintString: """",
+                usage: global::Godot.PropertyUsageFlags.Storage | global::Godot.PropertyUsageFlags.Editor,
+                exported: false),
+            flags: global::Godot.MethodFlags.Normal,
+            arguments: new() {},
+            defaultArguments: null
+        );
+
+        public static readonly global::Godot.Bridge.MethodInfo _Ready = new(
+            name: MethodName._Ready,
+            returnVal: new(
+                type: global::Godot.Variant.Type.Nil,
+                name: new global::Godot.StringName(),
+                hint: global::Godot.PropertyHint.None,
+                hintString: """",
+                usage: global::Godot.PropertyUsageFlags.Storage | global::Godot.PropertyUsageFlags.Editor,
+                exported: false),
+            flags: global::Godot.MethodFlags.Normal,
+            arguments: new() {},
+            defaultArguments: null
+        );
+
+        public static readonly global::Godot.Bridge.MethodInfo DoThing2 = new(
+            name: MethodName.DoThing2,
+            returnVal: new(
+                type: global::Godot.Variant.Type.Nil,
+                name: new global::Godot.StringName(),
+                hint: global::Godot.PropertyHint.None,
+                hintString: """",
+                usage: global::Godot.PropertyUsageFlags.Storage | global::Godot.PropertyUsageFlags.Editor,
+                exported: false),
+            flags: global::Godot.MethodFlags.Normal,
+            arguments: new() {},
+            defaultArguments: null
+        );
+
+        public static readonly global::Godot.Bridge.MethodInfo DoThing3 = new(
+            name: MethodName.DoThing3,
+            returnVal: new(
+                type: global::Godot.Variant.Type.Nil,
+                name: new global::Godot.StringName(),
+                hint: global::Godot.PropertyHint.None,
+                hintString: """",
+                usage: global::Godot.PropertyUsageFlags.Storage | global::Godot.PropertyUsageFlags.Editor,
+                exported: false),
+            flags: global::Godot.MethodFlags.Normal,
+            arguments: new() {
+                    new (
+                        type: global::Godot.Variant.Type.String,
+                        name: new global::Godot.StringName(""arg""),
+                        hint: global::Godot.PropertyHint.None,
+                        hintString: """",
+                        usage: global::Godot.PropertyUsageFlags.Storage | global::Godot.PropertyUsageFlags.Editor,
+                        exported: false),
+            },
+            defaultArguments: null
+        );
+
+        public static readonly global::Godot.Bridge.MethodInfo DoThing4 = new(
+            name: MethodName.DoThing4,
+            returnVal: new(
+                type: global::Godot.Variant.Type.Nil,
+                name: new global::Godot.StringName(),
+                hint: global::Godot.PropertyHint.None,
+                hintString: """",
+                usage: global::Godot.PropertyUsageFlags.Storage | global::Godot.PropertyUsageFlags.Editor,
+                exported: false),
+            flags: global::Godot.MethodFlags.Normal,
+            arguments: new() {
+                    new (
+                        type: global::Godot.Variant.Type.PackedStringArray,
+                        name: new global::Godot.StringName(""args""),
+                        hint: global::Godot.PropertyHint.None,
+                        hintString: """",
+                        usage: global::Godot.PropertyUsageFlags.Storage | global::Godot.PropertyUsageFlags.Editor,
+                        exported: false),
+            },
+            defaultArguments: null
+        );
+
+
+        public static readonly global::System.Collections.Generic.List<global::Godot.Bridge.MethodInfo> GodotMethodList = new() {
+            GodotHatMethodInfos._ExitTree,
+            GodotHatMethodInfos._Ready,
+            GodotHatMethodInfos.DoThing2,
+            GodotHatMethodInfos.DoThing3,
+            GodotHatMethodInfos.DoThing4,
+        };
+    }
+
     #pragma warning disable CS0109 // Disable warning about redundant 'new' keyword
     public new class MethodName : global::Godot.Node.MethodName
     {
@@ -187,7 +188,7 @@ public partial class MyNode
 
     internal new static global::System.Collections.Generic.List<global::Godot.Bridge.MethodInfo> GetGodotMethodList()
     {
-        return MethodInfos.GodotMethodList;
+        return GodotHatMethodInfos.GodotMethodList;
     }
     #pragma warning restore CS0109
 
@@ -215,7 +216,7 @@ public partial class MyNode
         {
             DoThing3(
                 // arg
-                global::Godot.NativeInterop.VariantUtils.ConvertTo<String>(args[0]));
+                global::Godot.NativeInterop.VariantUtils.ConvertTo<string>(args[0]));
             ret = default;
             return true;
         }
@@ -223,7 +224,7 @@ public partial class MyNode
         {
             DoThing4(
                 // args
-                global::Godot.NativeInterop.VariantUtils.ConvertTo<global::Godot.Variant.Type.PackedStringArray>(args[0]));
+                global::Godot.NativeInterop.VariantUtils.ConvertTo<string[]>(args[0]));
             ret = default;
             return true;
         }

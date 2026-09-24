@@ -26,20 +26,30 @@ namespace GodotHat.SourceGenerators;
 
 internal static partial class GodotSourceGeneratorsUtil
 {
-    public record GodotType(string? NameSpace, string TypeName, GodotVariantType VariantType)
+    public record GodotType(
+        string FullyQualifiedName,
+        GodotVariantType VariantType,
+        string? GodotObjectArrayElementType = null)
     {
-        public static readonly GodotType Void = new(null, "void", GodotVariantType.Nil);
+        public static readonly GodotType Void = new("void", GodotVariantType.Nil);
 
-        public string? NameSpace { get; } = NameSpace;
-        public string TypeName { get; } = TypeName;
-        public string QualifiedName =>
-            this.NameSpace is not null ? $"{this.NameSpace}.{this.TypeName}" : this.TypeName;
-
+        public string FullyQualifiedName { get; } = FullyQualifiedName;
         public GodotVariantType VariantType { get; } = VariantType;
 
-        public string GlobalOrVariantType => string.IsNullOrEmpty(TypeName) ? ("global::Godot.Variant.Type." + VariantType) : TypeName;
-        
-        // TODO: Add hints if those ever become relevant
+        // Arrays of GodotObject subtypes aren't handled by VariantUtils' generic ConvertTo/CreateFrom
+        public string? GodotObjectArrayElementType { get; } = GodotObjectArrayElementType;
+
+        public bool IsVoid => ReferenceEquals(this, Void);
+
+        public string ConvertFromVariant(string variantExpression) =>
+            this.GodotObjectArrayElementType is not null
+                ? $"global::Godot.NativeInterop.VariantUtils.ConvertToSystemArrayOfGodotObject<{this.GodotObjectArrayElementType}>({variantExpression})"
+                : $"global::Godot.NativeInterop.VariantUtils.ConvertTo<{this.FullyQualifiedName}>({variantExpression})";
+
+        public string CreateVariant(string valueExpression) =>
+            this.GodotObjectArrayElementType is not null
+                ? $"global::Godot.NativeInterop.VariantUtils.CreateFromSystemArrayOfGodotObject({valueExpression})"
+                : $"global::Godot.NativeInterop.VariantUtils.CreateFrom<{this.FullyQualifiedName}>({valueExpression})";
     }
 
     public record GodotArgument(GodotType Type, string Name)
@@ -93,28 +103,43 @@ internal static partial class GodotSourceGeneratorsUtil
                 TypeKind.Enum => GodotVariantType.Int,
                 TypeKind.Struct => ConvertStructTypeToVariantType(typeSymbol),
                 _ when IsDescendedFromGodotObject(typeSymbol) => GodotVariantType.Object,
-                _ when IsAssemblyAndNamespace(typeSymbol, "GodotSharp", "Godot.Collections") => typeSymbol switch
+                _ when IsAssemblyAndNamespace(typeSymbol, "GodotSharp", "Godot") => typeSymbol.Name switch
                 {
-                    // TODO: we might care if it's generic
-                    { Name: "Array" } => GodotVariantType.Array,
-                    { Name: "Dictionary" } => GodotVariantType.Dictionary,
+                    "NodePath" => GodotVariantType.NodePath,
+                    "StringName" => GodotVariantType.StringName,
+                    _ => null,
+                },
+                // Generic Array<T>/Dictionary<TKey, TValue> are handled by VariantUtils.ConvertTo/CreateFrom too
+                _ when IsAssemblyAndNamespace(typeSymbol, "GodotSharp", "Godot.Collections") => typeSymbol.Name switch
+                {
+                    "Array" => GodotVariantType.Array,
+                    "Dictionary" => GodotVariantType.Dictionary,
                     _ => null,
                 },
                 _ => null,
             },
         };
 
-        return variantType is null
-            ? null
-            : new GodotType(
-                typeSymbol.ContainingNamespace?.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
-                typeSymbol.Name,
-                (GodotVariantType)variantType);
+        if (variantType is null)
+        {
+            return null;
+        }
+
+        string? godotObjectArrayElementType =
+            typeSymbol is IArrayTypeSymbol { ElementType: var arrayElementType } &&
+            IsDescendedFromGodotObject(arrayElementType)
+                ? arrayElementType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
+                : null;
+
+        return new GodotType(
+            typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
+            (GodotVariantType)variantType,
+            godotObjectArrayElementType);
     }
 
     public static bool IsAssemblyAndNamespace(ITypeSymbol typeSymbol, string assemblyName, string @namespace) =>
         typeSymbol.ContainingAssembly?.Name == assemblyName &&
-        typeSymbol.ContainingNamespace?.Name == @namespace;
+        typeSymbol.ContainingNamespace?.ToDisplayString() == @namespace;
 
     private static GodotVariantType? ConvertStructTypeToVariantType(ITypeSymbol typeSymbol)
     {
@@ -172,7 +197,7 @@ internal static partial class GodotSourceGeneratorsUtil
             SpecialType.System_Int64 => GodotVariantType.PackedInt64Array,
             SpecialType.System_Single => GodotVariantType.PackedFloat32Array,
             SpecialType.System_String => GodotVariantType.PackedStringArray,
-            _ when !IsAssemblyAndNamespace(typeSymbol, "GodotSharp", "Godot") => typeSymbol.Name switch
+            _ when IsAssemblyAndNamespace(typeSymbol, "GodotSharp", "Godot") => typeSymbol.Name switch
             {
                 "Color" => GodotVariantType.PackedColorArray,
                 "NodePath" => GodotVariantType.Array,
@@ -180,6 +205,7 @@ internal static partial class GodotSourceGeneratorsUtil
                 "StringName" => GodotVariantType.Array,
                 "Vector2" => GodotVariantType.PackedVector2Array,
                 "Vector3" => GodotVariantType.PackedVector3Array,
+                "Vector4" => GodotVariantType.PackedVector4Array,
                 _ => null,
             },
             _ => null,
