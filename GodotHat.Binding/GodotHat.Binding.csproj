@@ -1,0 +1,46 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <Import Project="..\Common.props" />
+
+    <PropertyGroup>
+        <Description>Per-Control data binding for Godot C#: binds Controls to R3 view models through metadata authored in the inspector.</Description>
+        <TargetFramework>net8.0</TargetFramework>
+        <RootNamespace>GodotHat.Binding</RootNamespace>
+        <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <PackageTags>$(PackageTags) mvvm binding r3</PackageTags>
+        <!-- The oldest supported Godot; newer runtimes load assemblies built against it -->
+        <BindingGodotSharpVersion Condition="'$(BindingGodotSharpVersion)' == ''">4.4.0</BindingGodotSharpVersion>
+        <!--
+            This is a class library, not a Godot project: its Godot types are scripts only through the wrappers in
+            addons/godothat_binding, so there are no script paths or plugin initializers to generate. TOOLS enables the
+            default values the editor uses for exported properties.
+        -->
+        <GodotDisabledSourceGenerators>ScriptPathAttribute;GodotPluginsInitializer</GodotDisabledSourceGenerators>
+        <DefineConstants>$(DefineConstants);TOOLS</DefineConstants>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="GodotSharp" Version="$(BindingGodotSharpVersion)" />
+        <PackageReference Include="Godot.SourceGenerators" Version="$(BindingGodotSharpVersion)" PrivateAssets="all" />
+        <PackageReference Include="Roslynator.Analyzers" Version="5.0.0">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+    </ItemGroup>
+
+    <ItemGroup>
+        <InternalsVisibleTo Include="GodotHat.Binding.Testing" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <!-- Let the view model generator in the core package flow to projects that only reference this one -->
+        <ProjectReference Include="..\GodotHat.Binding.Core\GodotHat.Binding.Core.csproj" PrivateAssets="none" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <!-- Installs the addon (script wrappers, and later the editor plugin) into Godot projects that use this package -->
+        <None Include="build\GodotHat.Binding.targets" Pack="true" PackagePath="buildTransitive" />
+        <None Include="..\addons\godothat_binding\**\*" Pack="true" PackagePath="godot\addons\godothat_binding" LinkBase="addon" />
+    </ItemGroup>
+</Project>

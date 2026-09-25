@@ -1,0 +1,214 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://addons/godothat_binding/BindingRoot.cs" id="1_root"]
+[ext_resource type="Script" path="res://addons/godothat_binding/BindingDef.cs" id="2_def"]
+[ext_resource type="PackedScene" path="res://SaveRow.tscn" id="4_save_row"]
+[ext_resource type="Resource" path="res://Samples/settings_sample.tres" id="5_sample"]
+
+[sub_resource type="Resource" id="Binding_name"]
+script = ExtResource("2_def")
+Path = "PlayerName"
+Mode = 1
+
+[sub_resource type="Resource" id="Binding_volume"]
+script = ExtResource("2_def")
+Path = "Volume"
+Mode = 1
+
+[sub_resource type="Resource" id="Binding_volume_text"]
+script = ExtResource("2_def")
+Path = "Volume"
+Converter = &"format"
+ConverterArg = "{0:0}%"
+
+[sub_resource type="Resource" id="Binding_difficulty"]
+script = ExtResource("2_def")
+Path = "Difficulty"
+Mode = 1
+
+[sub_resource type="Resource" id="Binding_fullscreen"]
+script = ExtResource("2_def")
+Path = "Fullscreen"
+Mode = 1
+
+[sub_resource type="Resource" id="Binding_summary"]
+script = ExtResource("2_def")
+Path = "Summary"
+
+[sub_resource type="Resource" id="Binding_saves"]
+script = ExtResource("2_def")
+Path = "Saves"
+Converter = &"format"
+ConverterArg = "Saves: {0}"
+
+[sub_resource type="Resource" id="Binding_save"]
+script = ExtResource("2_def")
+Kind = 1
+Path = "Save"
+
+[sub_resource type="Resource" id="Binding_reset"]
+script = ExtResource("2_def")
+Kind = 1
+Path = "ResetName"
+
+[sub_resource type="Resource" id="Binding_history"]
+script = ExtResource("2_def")
+Kind = 4
+Path = "History"
+Template = ExtResource("4_save_row")
+
+[sub_resource type="Resource" id="Binding_has_history"]
+script = ExtResource("2_def")
+Path = "History"
+Converter = &"any"
+
+[sub_resource type="Resource" id="Binding_status"]
+script = ExtResource("2_def")
+Kind = 2
+Path = "Status"
+
+[node name="Settings" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_root")
+ViewModelType = "BindingSample.ViewModels.SettingsViewModel"
+SampleData = ExtResource("5_sample")
+
+[node name="Margin" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 24
+
+[node name="Rows" type="VBoxContainer" parent="Margin"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="Margin/Rows"]
+layout_mode = 2
+text = "Settings"
+
+[node name="Form" type="GridContainer" parent="Margin/Rows"]
+layout_mode = 2
+columns = 2
+
+[node name="NameLabel" type="Label" parent="Margin/Rows/Form"]
+layout_mode = 2
+text = "Name"
+
+[node name="NameRow" type="HBoxContainer" parent="Margin/Rows/Form"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="NameEdit" type="LineEdit" parent="Margin/Rows/Form/NameRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+metadata/godothat_bindings = {
+&"text": SubResource("Binding_name")
+}
+
+[node name="ResetButton" type="Button" parent="Margin/Rows/Form/NameRow"]
+layout_mode = 2
+text = "Reset"
+metadata/godothat_bindings = {
+&"pressed": SubResource("Binding_reset")
+}
+
+[node name="VolumeLabel" type="Label" parent="Margin/Rows/Form"]
+layout_mode = 2
+text = "Volume"
+
+[node name="VolumeRow" type="HBoxContainer" parent="Margin/Rows/Form"]
+layout_mode = 2
+
+[node name="VolumeSlider" type="HSlider" parent="Margin/Rows/Form/VolumeRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+metadata/godothat_bindings = {
+&"value": SubResource("Binding_volume")
+}
+
+[node name="VolumeValue" type="Label" parent="Margin/Rows/Form/VolumeRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(48, 0)
+layout_mode = 2
+metadata/godothat_bindings = {
+&"text": SubResource("Binding_volume_text")
+}
+
+[node name="DifficultyLabel" type="Label" parent="Margin/Rows/Form"]
+layout_mode = 2
+text = "Difficulty"
+
+[node name="DifficultyOption" type="OptionButton" parent="Margin/Rows/Form"]
+unique_name_in_owner = true
+layout_mode = 2
+metadata/godothat_bindings = {
+&"selected": SubResource("Binding_difficulty")
+}
+
+[node name="FullscreenLabel" type="Label" parent="Margin/Rows/Form"]
+layout_mode = 2
+text = "Fullscreen"
+
+[node name="FullscreenCheck" type="CheckBox" parent="Margin/Rows/Form"]
+layout_mode = 2
+metadata/godothat_bindings = {
+&"button_pressed": SubResource("Binding_fullscreen")
+}
+
+[node name="Summary" type="Label" parent="Margin/Rows"]
+unique_name_in_owner = true
+layout_mode = 2
+metadata/godothat_bindings = {
+&"text": SubResource("Binding_summary")
+}
+
+[node name="Actions" type="HBoxContainer" parent="Margin/Rows"]
+layout_mode = 2
+
+[node name="SaveButton" type="Button" parent="Margin/Rows/Actions"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Save"
+metadata/godothat_bindings = {
+&"pressed": SubResource("Binding_save")
+}
+
+[node name="Saves" type="Label" parent="Margin/Rows/Actions"]
+layout_mode = 2
+metadata/godothat_bindings = {
+&"text": SubResource("Binding_saves")
+}
+
+[node name="Status" type="Label" parent="Margin/Rows"]
+unique_name_in_owner = true
+layout_mode = 2
+metadata/godothat_bindings = {
+&"set_text": SubResource("Binding_status")
+}
+
+[node name="HistoryTitle" type="Label" parent="Margin/Rows"]
+layout_mode = 2
+text = "History"
+metadata/godothat_bindings = {
+&"visible": SubResource("Binding_has_history")
+}
+
+[node name="History" type="VBoxContainer" parent="Margin/Rows"]
+unique_name_in_owner = true
+layout_mode = 2
+metadata/godothat_bindings = {
+&"@items": SubResource("Binding_history")
+}

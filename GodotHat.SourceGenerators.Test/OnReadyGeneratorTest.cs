@@ -76,6 +76,7 @@ public partial class MyNode
 {
     public override void _Ready()
     {
+        base._Ready();
         // Generated code, to add other calls add [OnReady] attributes to methods
 
         __disposable_DoThing = DoThing();

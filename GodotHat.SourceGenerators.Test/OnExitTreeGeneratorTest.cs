@@ -120,6 +120,7 @@ public partial class MyNode
         // Generated code, to add other calls add [OnExitTree] attributes to methods
 
         __DisposeOnExitTree();
+        base._ExitTree();
     }
 
     private void __DisposeOnExitTree()
@@ -217,6 +218,7 @@ public partial class MyNode
 
         DoThingOnExit();
         __DisposeOnExitTree();
+        base._ExitTree();
     }
 
     private void __DisposeOnExitTree()

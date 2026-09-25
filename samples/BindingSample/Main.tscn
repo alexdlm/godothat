@@ -1,0 +1,73 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://addons/godothat_binding/BindingRoot.cs" id="1_root"]
+[ext_resource type="Script" path="res://addons/godothat_binding/BindingDef.cs" id="2_def"]
+[ext_resource type="Script" path="res://addons/godothat_binding/ContentPresenter.cs" id="3_presenter"]
+[ext_resource type="PackedScene" path="res://Settings.tscn" id="5_settings"]
+[ext_resource type="PackedScene" path="res://About.tscn" id="6_about"]
+
+[sub_resource type="Resource" id="Binding_show_settings"]
+script = ExtResource("2_def")
+Kind = 1
+Path = "ShowSettings"
+
+[sub_resource type="Resource" id="Binding_show_about"]
+script = ExtResource("2_def")
+Kind = 1
+Path = "ShowAbout"
+
+[sub_resource type="Resource" id="Binding_page"]
+script = ExtResource("2_def")
+Kind = 3
+Path = "Page"
+
+[node name="Main" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_root")
+ViewModelType = "BindingSample.ViewModels.ShellViewModel"
+
+[node name="Rows" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Nav" type="HBoxContainer" parent="Rows"]
+layout_mode = 2
+
+[node name="SettingsButton" type="Button" parent="Rows/Nav"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Settings"
+metadata/godothat_bindings = {
+&"pressed": SubResource("Binding_show_settings")
+}
+
+[node name="AboutButton" type="Button" parent="Rows/Nav"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "About"
+metadata/godothat_bindings = {
+&"pressed": SubResource("Binding_show_about")
+}
+
+[node name="Pages" type="Control" parent="Rows"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+script = ExtResource("3_presenter")
+Views = Dictionary[String, PackedScene]({
+"BindingSample.ViewModels.AboutViewModel": ExtResource("6_about"),
+"BindingSample.ViewModels.SettingsViewModel": ExtResource("5_settings")
+})
+OwnsContent = true
+metadata/godothat_bindings = {
+&"@context": SubResource("Binding_page")
+}

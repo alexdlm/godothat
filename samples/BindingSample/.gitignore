@@ -1,0 +1,5 @@
+# Installed from the GodotHat.Binding package on build
+addons/godothat_binding/
+# Written by the GdUnit4 test adapter on each run
+gdunit4_testadapter_v5/
+TestResults/

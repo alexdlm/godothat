@@ -1,0 +1,31 @@
+<Project>
+    <!--
+        Godot only loads scripts from the game's own assembly, so the node and resource types that scenes reference
+        (BindingRoot, BindingDef) are small wrappers that must live in the Godot project. This copies them, from this
+        package, to addons/godothat_binding before each build, updating them when the package changes. Don't edit the
+        copies; derive from BindingRootBase instead. Set GodotHatBindingInstallAddon to false to manage the addon
+        yourself.
+    -->
+    <PropertyGroup>
+        <GodotHatBindingInstallAddon Condition="'$(GodotHatBindingInstallAddon)' == ''">true</GodotHatBindingInstallAddon>
+        <GodotHatBindingAddonDir Condition="'$(GodotHatBindingAddonDir)' == ''">addons\godothat_binding\</GodotHatBindingAddonDir>
+    </PropertyGroup>
+
+    <Target Name="GodotHatBindingInstallAddon"
+            BeforeTargets="BeforeBuild"
+            Condition="'$(GodotHatBindingInstallAddon)' == 'true' And '$(GodotProjectDir)' != ''">
+        <ItemGroup>
+            <_GodotHatBindingAddonFile Include="$(MSBuildThisFileDirectory)..\godot\addons\godothat_binding\**\*" />
+        </ItemGroup>
+
+        <Copy SourceFiles="@(_GodotHatBindingAddonFile)"
+              DestinationFiles="@(_GodotHatBindingAddonFile->'$(GodotProjectDir)$(GodotHatBindingAddonDir)%(RecursiveDir)%(Filename)%(Extension)')"
+              SkipUnchangedFiles="true" />
+
+        <!-- On the first build the copies didn't exist when the project's default items were evaluated -->
+        <ItemGroup>
+            <_GodotHatBindingAddonCompile Include="$(GodotHatBindingAddonDir)**\*.cs" />
+            <Compile Include="@(_GodotHatBindingAddonCompile)" Exclude="@(Compile)" />
+        </ItemGroup>
+    </Target>
+</Project>

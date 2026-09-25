@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <!--
+        The sample's view models, in a library without Godot so they can be tested with plain .NET: see
+        BindingSample.ViewModels.Test. The view model generator comes with GodotHat.Binding.Core.
+    -->
+
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="GodotHat.Binding.Core" Version="0.0.0-local" />
+    </ItemGroup>
+</Project>

@@ -1,0 +1,33 @@
+<Project Sdk="Godot.NET.Sdk/4.7.2">
+
+    <!--
+        Engine tests for GodotHat.Binding, run inside Godot by GdUnit4. Not part of GodotHat.sln, see the
+        BindingEngine job in dotnet.yml. GdUnit4 opens the project in the Godot editor, which rewrites an unversioned
+        Godot.NET.Sdk to its own version, so the version is set here rather than in global.json.
+
+        dotnet pack -o nupkgs
+        GODOT_BIN=/path/to/godot dotnet test GodotHat.Binding.Smoke
+    -->
+
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <EnableDynamicLoading>true</EnableDynamicLoading>
+        <!-- GdUnit4 runs the tests inside Godot, which needs every dependency next to the assembly -->
+        <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+        <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+        <!-- gdUnit4.test.adapter 3.1 requires the gdUnit4.api 5.1 prerelease -->
+        <NoWarn>$(NoWarn);NU5104</NoWarn>
+        <RunSettingsFilePath>$(MSBuildProjectDirectory)/.runsettings</RunSettingsFilePath>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.10.1" />
+        <PackageReference Include="gdUnit4.api" Version="5.1.0-rc5" />
+        <PackageReference Include="gdUnit4.test.adapter" Version="3.1.1" />
+        <PackageReference Include="AwesomeAssertions" Version="9.6.0" />
+        <PackageReference Include="GodotHat.Binding" Version="0.0.0-local" />
+        <PackageReference Include="GodotHat.Binding.Testing" Version="0.0.0-local" />
+        <PackageReference Include="Jab" Version="0.12.0" PrivateAssets="all" />
+    </ItemGroup>
+</Project>
